@@ -45,6 +45,11 @@ event.emit("hello", "world!");
 
 console.log("-----");
 
+console.log(event.eventNames());
+console.log(event.listeners("hello"));
+
+console.log("-----");
+
 class Countdown extends EventLite {
   constructor(seconds) {
     super();

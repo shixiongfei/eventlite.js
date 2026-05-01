@@ -131,6 +131,23 @@ export class EventLite {
       ? this.removeListener(event, listener)
       : this.removeAllListeners(event);
   }
+
+  /**
+   * Get all event names
+   * @returns {string[]}
+   */
+  eventNames() {
+    return Object.keys(this._events);
+  }
+
+  /**
+   * Get all listeners by event name
+   * @param {string} event - Event name
+   * @returns {Listener[] | undefined}
+   */
+  listeners(event) {
+    return this._events.hasOwnProperty(event) ? this._events[event] : undefined;
+  }
 }
 
 /**

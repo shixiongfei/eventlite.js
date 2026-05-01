@@ -11,72 +11,39 @@
 
 export declare type Listener = (...args: any[]) => void;
 
-/**
- * A very simple and fast event emitter
- */
+/** A very simple and fast event emittera */
 export declare class EventLite {
   constructor();
 
-  /**
-   * Add an event listener
-   * @param {string} event - Event name
-   * @param {Listener} listener - Listener
-   * @returns {this}
-   */
+  /** Add an event listener */
   addListener(event: string, listener: Listener): this;
 
-  /**
-   * Remove an event listener
-   * @param {string} event - Event name
-   * @param {Listener} listener - Listener
-   * @returns {this}
-   */
+  /** Remove an event listener */
   removeListener(event: string, listener: Listener): this;
 
-  /**
-   * Remove all event listeners
-   * @param {string} [event] - Event name
-   * @returns {this}
-   */
+  /** Remove all event listeners */
   removeAllListeners(event?: string): this;
 
-  /**
-   * Emit an event
-   * @param {string} event - Event name
-   * @param  {...any} args - Arguments
-   * @return {this}
-   */
+  /** Emit an event */
   emit(event: string, ...args: any[]): this;
 
-  /**
-   * Add an event listener
-   * @param {string} event - Event name
-   * @param {Listener} listener - Listener
-   * @returns {() => void} - Remove function
-   */
+  /** Add an event listener */
   on(event: string, listener: Listener): () => void;
 
-  /**
-   * Add an event listener and just emit once
-   * @param {string} event - Event name
-   * @param {Listener} listener - Listener
-   * @returns {this}
-   */
+  /** Add an event listener and just emit once */
   once(event: string, listener: Listener): this;
 
-  /**
-   * Remove an event listener or remove all event listeners
-   * @param {string} event - Event name
-   * @param {Listener} [listener] - Listener
-   * @returns {this}
-   */
+  /** Remove an event listener or remove all event listeners */
   off(event: string, listener?: Listener): this;
+
+  /** Get all event names */
+  eventNames(): string[];
+
+  /** Get all listeners by event name */
+  listeners(event: string): Listener[] | undefined;
 }
 
-/**
- * Create a new EventLite object
- * @returns {EventLite}
- */
+/** Create a new EventLite object */
 export declare function eventlite(): EventLite;
 
 export default EventLite;
