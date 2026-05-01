@@ -1,9 +1,10 @@
 {
   "name": "eventlite.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A very simple event emitter",
   "main": "./eventlite.js",
   "types": "./eventlite.d.ts",
+  "type": "module",
   "scripts": {
     "test": "node ./test.js"
   },
