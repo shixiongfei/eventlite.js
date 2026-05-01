@@ -1,0 +1,20 @@
+name: Publish eventlite.js package to npmjs
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  id-token: write
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          registry-url: https://registry.npmjs.org/
+      - run: npm ci
+      - run: npm publish
