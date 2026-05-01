@@ -146,7 +146,7 @@ export class EventLite {
    * @returns {Listener[] | undefined}
    */
   listeners(event) {
-    return this._events.hasOwnProperty(event) ? this._events[event] : undefined;
+    return this._events[event];
   }
 }
 

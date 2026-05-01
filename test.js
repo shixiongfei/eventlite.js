@@ -47,6 +47,7 @@ console.log("-----");
 
 console.log(event.eventNames());
 console.log(event.listeners("hello"));
+console.log(event.listeners("world"));
 
 console.log("-----");
 
