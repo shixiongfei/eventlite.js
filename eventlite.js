@@ -168,12 +168,10 @@ export class EventLite {
   /**
    * Get all listeners by event name
    * @param {string} event - Event name
-   * @returns {Listener[] | undefined}
+   * @returns {Listener[]}
    */
   listeners(event) {
-    return this._events.hasOwnProperty(event)
-      ? this._events[event].map((listener) => listener.fn)
-      : undefined;
+    return (this._events[event] || []).map((listener) => listener.fn);
   }
 }
 

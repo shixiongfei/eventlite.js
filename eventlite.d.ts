@@ -42,7 +42,7 @@ export declare class EventLite {
   eventNames(): string[];
 
   /** Get all listeners by event name */
-  listeners(event: string): Listener[] | undefined;
+  listeners(event: string): Listener[];
 }
 
 /** Create a new EventLite object */
