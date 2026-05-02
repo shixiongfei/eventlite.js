@@ -42,7 +42,12 @@ export class EventLite {
 
     context = context || this;
 
-    const listeners = this._events[event] || [];
+    const listeners = this._events[event];
+
+    if (!listeners) {
+      this._events[event] = [{ fn: listener, context: context }];
+      return this;
+    }
 
     // const index = listeners.findIndex(
     //   (current) => current.fn === listener && current.context === context,
@@ -248,10 +253,10 @@ export class EventLite {
           break;
         default: {
           const len = arguments.length;
-          const args = new Array(len - 1);
+          const args = new Array(len);
 
-          for (let j = 1; j < len; j++) {
-            args[j - 1] = arguments[j];
+          for (let i = 0; i < len; i++) {
+            args[i] = arguments[i];
           }
 
           listener.apply(context, args);
