@@ -1,6 +1,6 @@
 {
   "name": "eventlite.js",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A very simple and fast event emitter",
   "main": "./eventlite.js",
   "types": "./eventlite.d.ts",
