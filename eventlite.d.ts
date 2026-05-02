@@ -9,6 +9,8 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
+// @ts-check
+
 export declare type Listener = (...args: any[]) => void;
 
 /** A very simple and fast event emittera */
@@ -16,10 +18,10 @@ export declare class EventLite {
   constructor();
 
   /** Add an event listener */
-  addListener(event: string, listener: Listener): this;
+  addListener(event: string, listener: Listener, context?: any): this;
 
   /** Remove an event listener */
-  removeListener(event: string, listener: Listener): this;
+  removeListener(event: string, listener: Listener, context?: any): this;
 
   /** Remove all event listeners */
   removeAllListeners(event?: string): this;
@@ -28,13 +30,13 @@ export declare class EventLite {
   emit(event: string, ...args: any[]): this;
 
   /** Add an event listener */
-  on(event: string, listener: Listener): () => void;
+  on(event: string, listener: Listener, context?: any): () => void;
 
   /** Add an event listener and just emit once */
-  once(event: string, listener: Listener): this;
+  once(event: string, listener: Listener, context?: any): this;
 
   /** Remove an event listener or remove all event listeners */
-  off(event: string, listener?: Listener): this;
+  off(event: string, listener?: Listener, context?: any): this;
 
   /** Get all event names */
   eventNames(): string[];

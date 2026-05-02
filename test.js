@@ -9,6 +9,8 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
+// @ts-check
+
 import EventLite, { eventlite } from "./eventlite.js";
 
 const event = eventlite();
@@ -45,13 +47,45 @@ event.emit("hello", "world!");
 
 console.log("-----");
 
+class Counter {
+  constructor() {
+    this.count = 0;
+    console.log("Counter init", this.count);
+  }
+
+  add(value = 1) {
+    this.count += value;
+    console.log("Counter add", value, "now is", this.count);
+  }
+
+  sub(value = 1) {
+    this.count -= value;
+    console.log("Counter sub", value, "now is", this.count);
+  }
+}
+
+const counter = new Counter();
+
+event.on("add", counter.add, counter);
+event.once("sub", counter.sub, counter);
+
+event.emit("add");
+event.emit("add", 10);
+event.emit("sub", 5);
+event.emit("sub");
+
+console.log("-----");
+
 console.log(event.eventNames());
 console.log(event.listeners("hello"));
 console.log(event.listeners("world"));
+console.log(event.listeners("add"));
+console.log(event.listeners("sub"));
 
 console.log("-----");
 
 class Countdown extends EventLite {
+  /** @param {number} seconds */
   constructor(seconds) {
     super();
 
@@ -60,7 +94,10 @@ class Countdown extends EventLite {
         if (seconds < 1) {
           return;
         }
+
+        // @ts-ignore
         this.emit("countdown", --seconds);
+        // @ts-ignore
         setTimeout(trigger.bind(this), 1000);
       }.bind(this),
       1000,

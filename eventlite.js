@@ -9,6 +9,8 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
+// @ts-check
+
 /**
  * @typedef {(...args: any[]) => void} Listener
  */
@@ -18,7 +20,7 @@
  */
 export class EventLite {
   constructor() {
-    /** @type {{[event: string]: Listener[]}} */
+    /** @type {{[event: string]: {fn: Listener, context: any}[]}} */
     this._events = {};
   }
 
@@ -26,17 +28,23 @@ export class EventLite {
    * Add an event listener
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
+   * @param {*} [context = this] - Context
    * @returns {this}
    */
-  addListener(event, listener) {
+  addListener(event, listener, context) {
     if (typeof listener !== "function") {
       throw new TypeError("The listener must be a function");
     }
 
-    const listeners = this._events[event] ?? [];
+    context = context || this;
 
-    if (listeners.indexOf(listener) < 0) {
-      this._events[event] = [...listeners, listener];
+    const listeners = this._events[event] || [];
+    const index = listeners.findIndex(
+      (current) => current.fn === listener && current.context === context,
+    );
+
+    if (index < 0) {
+      this._events[event] = [...listeners, { fn: listener, context: context }];
     }
 
     return this;
@@ -46,12 +54,15 @@ export class EventLite {
    * Remove an event listener
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
+   * @param {*} [context = this] - Context
    * @returns {this}
    */
-  removeListener(event, listener) {
+  removeListener(event, listener, context) {
     if (this._events.hasOwnProperty(event)) {
+      context = context || this;
+
       this._events[event] = this._events[event].filter(
-        (current) => current !== listener,
+        (current) => current.fn !== listener && current.context === context,
       );
 
       if (this._events[event].length === 0) {
@@ -88,7 +99,9 @@ export class EventLite {
    */
   emit(event, ...args) {
     if (this._events.hasOwnProperty(event)) {
-      this._events[event].forEach((listener) => listener.apply(this, args));
+      this._events[event].forEach((listener) =>
+        listener.fn.apply(listener.context, args),
+      );
     }
 
     return this;
@@ -98,23 +111,27 @@ export class EventLite {
    * Add an event listener
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
+   * @param {*} [context = this] - Context
    * @returns {() => void} - Remove function
    */
-  on(event, listener) {
-    this.addListener(event, listener);
-    return () => this.removeListener(event, listener);
+  on(event, listener, context) {
+    this.addListener(event, listener, context);
+    return () => this.removeListener(event, listener, context);
   }
 
   /**
    * Add an event listener and just emit once
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
+   * @param {*} [context = this] - Context
    * @returns {this}
    */
-  once(event, listener) {
+  once(event, listener, context) {
+    context = context || this;
+
     const remove = this.on(event, (...args) => {
       remove();
-      listener.apply(this, args);
+      listener.apply(context, args);
     });
 
     return this;
@@ -124,11 +141,12 @@ export class EventLite {
    * Remove an event listener or remove all event listeners
    * @param {string} event - Event name
    * @param {Listener} [listener] - Listener
+   * @param {*} [context = this] - Context
    * @returns {this}
    */
-  off(event, listener) {
+  off(event, listener, context) {
     return listener
-      ? this.removeListener(event, listener)
+      ? this.removeListener(event, listener, context)
       : this.removeAllListeners(event);
   }
 
@@ -146,7 +164,9 @@ export class EventLite {
    * @returns {Listener[] | undefined}
    */
   listeners(event) {
-    return this._events[event];
+    return this._events.hasOwnProperty(event)
+      ? this._events[event].map((listener) => listener.fn)
+      : undefined;
   }
 }
 
