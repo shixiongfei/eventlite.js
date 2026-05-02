@@ -19,9 +19,13 @@
  * A very simple and fast event emitter
  */
 export class EventLite {
+  /**
+   * @typedef {{fn: Listener, context: any}} EventListener
+   */
+
   constructor() {
-    /** @type {{[event: string]: {fn: Listener, context: any}[]}} */
-    this._events = {};
+    /** @type {{[event: string]: EventListener[]}} */
+    this._events = Object.create(null);
   }
 
   /**
@@ -59,7 +63,7 @@ export class EventLite {
    * @returns {this}
    */
   removeListener(event, listener, context) {
-    if (this._events.hasOwnProperty(event)) {
+    if (this._events[event]) {
       context = context || this;
 
       this._events[event] = this._events[event].filter(
@@ -81,11 +85,11 @@ export class EventLite {
    */
   removeAllListeners(event) {
     if (!event) {
-      this._events = {};
+      this._events = Object.create(null);
       return this;
     }
 
-    if (this._events.hasOwnProperty(event)) {
+    if (this._events[event]) {
       delete this._events[event];
     }
 
@@ -99,7 +103,7 @@ export class EventLite {
    * @return {this}
    */
   emit(event, ...args) {
-    if (this._events.hasOwnProperty(event)) {
+    if (this._events[event]) {
       this._events[event].forEach((listener) =>
         listener.fn.apply(listener.context, args),
       );
