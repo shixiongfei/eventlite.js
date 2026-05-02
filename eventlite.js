@@ -116,7 +116,19 @@ export class EventLite {
    */
   on(event, listener, context) {
     this.addListener(event, listener, context);
-    return () => this.removeListener(event, listener, context);
+
+    const makeRemove = () => {
+      let removed = false;
+
+      return () => {
+        if (!removed) {
+          removed = true;
+          this.removeListener(event, listener, context);
+        }
+      };
+    };
+
+    return makeRemove();
   }
 
   /**
