@@ -116,6 +116,8 @@ export class EventLite {
    * @returns {() => void} - Remove function
    */
   on(event, listener, context) {
+    context = context || this;
+
     this.addListener(event, listener, context);
 
     const makeRemove = () => {
