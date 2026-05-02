@@ -33,7 +33,7 @@ export declare class EventLite {
   on(event: string, listener: Listener, context?: any): () => void;
 
   /** Add an event listener and just emit once */
-  once(event: string, listener: Listener, context?: any): this;
+  once(event: string, listener: Listener, context?: any): () => void;
 
   /** Remove an event listener or remove all event listeners */
   off(event: string, listener?: Listener, context?: any): this;

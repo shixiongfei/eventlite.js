@@ -124,7 +124,7 @@ export class EventLite {
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
    * @param {*} [context = this] - Context
-   * @returns {this}
+   * @returns {() => void} - Remove function
    */
   once(event, listener, context) {
     context = context || this;
@@ -134,7 +134,7 @@ export class EventLite {
       listener.apply(context, args);
     });
 
-    return this;
+    return remove;
   }
 
   /**
