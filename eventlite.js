@@ -24,7 +24,7 @@ export class EventLite {
    */
 
   constructor() {
-    /** @type {{[event: string]: EventListener[]}} */
+    /** @type {{[event: string]: EventListener | EventListener[]}} */
     this._events = Object.create(null);
   }
 
@@ -45,7 +45,15 @@ export class EventLite {
     const listeners = this._events[event];
 
     if (!listeners) {
-      this._events[event] = [{ fn: listener, context: context }];
+      this._events[event] = { fn: listener, context: context };
+      return this;
+    }
+
+    if (!Array.isArray(listeners)) {
+      if (listeners.fn !== listener || listeners.context != context) {
+        this._events[event] = [listeners, { fn: listener, context: context }];
+      }
+
       return this;
     }
 
@@ -104,6 +112,14 @@ export class EventLite {
       //   delete this._events[event];
       // }
 
+      if (!Array.isArray(listeners)) {
+        if (listeners.fn === listener && listeners.context === context) {
+          delete this._events[event];
+        }
+
+        return this;
+      }
+
       // fast filter listeners
       let count = 0;
       const events = new Array(listeners.length);
@@ -150,7 +166,7 @@ export class EventLite {
    * @param  {...any} args - Arguments
    * @return {this}
    */
-  emit(event, a, b, c) {
+  emit(event, a, b, c, d, e) {
     // if (this._events[event]) {
     //   this._events[event].forEach((listener) =>
     //     listener.fn.apply(listener.context, args),
@@ -164,37 +180,69 @@ export class EventLite {
       return this;
     }
 
-    let args;
     const len = arguments.length;
 
-    for (let i = 0; i < listeners.length; i++) {
+    if (!Array.isArray(listeners)) {
       switch (len) {
         case 1:
-          listeners[i].fn.call(listeners[i].context);
-          break;
+          listeners.fn.call(listeners.context);
+          return this;
         case 2:
-          listeners[i].fn.call(listeners[i].context, a);
-          break;
+          listeners.fn.call(listeners.context, a);
+          return this;
         case 3:
-          listeners[i].fn.call(listeners[i].context, a, b);
-          break;
+          listeners.fn.call(listeners.context, a, b);
+          return this;
         case 4:
-          listeners[i].fn.call(listeners[i].context, a, b, c);
-          break;
-        default: {
-          if (!args) {
-            args = new Array(len - 1);
+          listeners.fn.call(listeners.context, a, b, c);
+          return this;
+        case 5:
+          listeners.fn.call(listeners.context, a, b, c, d);
+          return this;
+        case 6:
+          listeners.fn.call(listeners.context, a, b, c, d, e);
+          return this;
+      }
 
-            for (let j = 1; j < len; j++) {
-              args[j - 1] = arguments[j];
+      const args = new Array(len - 1);
+
+      for (let i = 1; i < len; i++) {
+        args[i - 1] = arguments[i];
+      }
+
+      listeners.fn.apply(listeners.context, args);
+    } else {
+      let args;
+
+      for (let i = 0; i < listeners.length; i++) {
+        switch (len) {
+          case 1:
+            listeners[i].fn.call(listeners[i].context);
+            break;
+          case 2:
+            listeners[i].fn.call(listeners[i].context, a);
+            break;
+          case 3:
+            listeners[i].fn.call(listeners[i].context, a, b);
+            break;
+          case 4:
+            listeners[i].fn.call(listeners[i].context, a, b, c);
+            break;
+          default: {
+            if (!args) {
+              args = new Array(len - 1);
+
+              for (let j = 1; j < len; j++) {
+                args[j - 1] = arguments[j];
+              }
             }
-          }
 
-          listeners[i].fn.apply(listeners[i].context, args);
+            listeners[i].fn.apply(listeners[i].context, args);
+          }
         }
       }
+      // end
     }
-    // end
 
     return this;
   }
@@ -237,7 +285,7 @@ export class EventLite {
     // });
 
     // fast emit
-    const remove = this.on(event, function (a, b, c) {
+    const remove = this.on(event, function (a, b, c, d, e) {
       remove();
 
       switch (arguments.length) {
@@ -252,6 +300,12 @@ export class EventLite {
           break;
         case 3:
           listener.call(context, a, b, c);
+          break;
+        case 4:
+          listener.call(context, a, b, c, d);
+          break;
+        case 5:
+          listener.call(context, a, b, c, d, e);
           break;
         default: {
           const len = arguments.length;
@@ -297,7 +351,15 @@ export class EventLite {
    * @returns {Listener[]}
    */
   listeners(event) {
-    return (this._events[event] || []).map((listener) => listener.fn);
+    const listeners = this._events[event];
+
+    if (!listeners) {
+      return [];
+    }
+
+    return Array.isArray(listeners)
+      ? listeners.map((listener) => listener.fn)
+      : [listeners.fn];
   }
 }
 
