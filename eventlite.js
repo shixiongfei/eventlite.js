@@ -48,7 +48,7 @@ export class EventLite {
     //   (current) => current.fn === listener && current.context === context,
     // );
 
-    // fast find
+    // fast find index
     let index = -1;
 
     for (let i = 0; i < listeners.length; i++) {
@@ -62,16 +62,16 @@ export class EventLite {
     if (index < 0) {
       // this._events[event] = [...listeners, { fn: listener, context: context }];
 
-      // fast copy
-      const next = new Array(listeners.length + 1);
+      // fast copy listeners
+      const events = new Array(listeners.length + 1);
 
       for (let i = 0; i < listeners.length; i++) {
-        next[i] = listeners[i];
+        events[i] = listeners[i];
       }
 
-      next[listeners.length] = { fn: listener, context: context };
+      events[listeners.length] = { fn: listener, context: context };
 
-      this._events[event] = next;
+      this._events[event] = events;
       // end
     }
 
@@ -86,16 +86,34 @@ export class EventLite {
    * @returns {this}
    */
   removeListener(event, listener, context) {
-    if (this._events[event]) {
+    const listeners = this._events[event];
+
+    if (listeners) {
       context = context || this;
 
-      this._events[event] = this._events[event].filter(
-        (current) => current.fn !== listener || current.context !== context,
-      );
+      // this._events[event] = this._events[event].filter(
+      //   (current) => current.fn !== listener || current.context !== context,
+      // );
+      //
+      // if (this._events[event].length === 0) {
+      //   delete this._events[event];
+      // }
 
-      if (this._events[event].length === 0) {
+      // fast filter listeners
+      const events = [];
+
+      for (let i = 0; i < listeners.length; i++) {
+        if (listeners[i].fn !== listener || listeners[i].context !== context) {
+          events.push(listeners[i]);
+        }
+      }
+
+      if (events.length > 0) {
+        this._events[event] = events;
+      } else {
         delete this._events[event];
       }
+      // end
     }
 
     return this;
