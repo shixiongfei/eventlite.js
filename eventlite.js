@@ -44,12 +44,35 @@ export class EventLite {
 
     const listeners = this._events[event] || [];
 
-    const index = listeners.findIndex(
-      (current) => current.fn === listener && current.context === context,
-    );
+    // const index = listeners.findIndex(
+    //   (current) => current.fn === listener && current.context === context,
+    // );
+
+    // fast find
+    let index = -1;
+
+    for (let i = 0; i < listeners.length; i++) {
+      if (listeners[i].fn === listener && listeners[i].context === context) {
+        index = i;
+        break;
+      }
+    }
+    // end
 
     if (index < 0) {
-      this._events[event] = [...listeners, { fn: listener, context: context }];
+      // this._events[event] = [...listeners, { fn: listener, context: context }];
+
+      // fast copy
+      const next = new Array(listeners.length + 1);
+
+      for (let i = 0; i < listeners.length; i++) {
+        next[i] = listeners[i];
+      }
+
+      next[listeners.length] = { fn: listener, context: context };
+
+      this._events[event] = next;
+      // end
     }
 
     return this;
