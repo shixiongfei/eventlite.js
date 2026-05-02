@@ -59,7 +59,7 @@ export class EventLite {
   removeListener(event, listener, context = this) {
     if (this._events.hasOwnProperty(event)) {
       this._events[event] = this._events[event].filter(
-        (current) => !(current.fn === listener && current.context === context),
+        (current) => current.fn !== listener || current.context !== context,
       );
 
       if (this._events[event].length === 0) {
