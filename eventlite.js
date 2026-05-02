@@ -143,12 +143,51 @@ export class EventLite {
    * @param  {...any} args - Arguments
    * @return {this}
    */
-  emit(event, ...args) {
-    if (this._events[event]) {
-      this._events[event].forEach((listener) =>
-        listener.fn.apply(listener.context, args),
-      );
+  emit(event, a, b, c) {
+    // if (this._events[event]) {
+    //   this._events[event].forEach((listener) =>
+    //     listener.fn.apply(listener.context, args),
+    //   );
+    // }
+
+    // fast emit
+    const listeners = this._events[event];
+
+    if (!listeners) {
+      return this;
     }
+
+    let args;
+    const len = arguments.length;
+
+    for (let i = 0; i < listeners.length; i++) {
+      switch (len) {
+        case 1:
+          listeners[i].fn.call(listeners[i].context);
+          break;
+        case 2:
+          listeners[i].fn.call(listeners[i].context, a);
+          break;
+        case 3:
+          listeners[i].fn.call(listeners[i].context, a, b);
+          break;
+        case 4:
+          listeners[i].fn.call(listeners[i].context, a, b, c);
+          break;
+        default: {
+          if (!args) {
+            args = new Array(len - 1);
+
+            for (let j = 1; j < len; j++) {
+              args[j - 1] = arguments[j];
+            }
+          }
+
+          listeners[i].fn.apply(listeners[i].context, args);
+        }
+      }
+    }
+    // end
 
     return this;
   }
@@ -165,18 +204,14 @@ export class EventLite {
 
     this.addListener(event, listener, context);
 
-    const makeRemove = () => {
-      let removed = false;
+    let removed = false;
 
-      return () => {
-        if (!removed) {
-          removed = true;
-          this.removeListener(event, listener, context);
-        }
-      };
+    return () => {
+      if (!removed) {
+        removed = true;
+        this.removeListener(event, listener, context);
+      }
     };
-
-    return makeRemove();
   }
 
   /**
@@ -189,10 +224,41 @@ export class EventLite {
   once(event, listener, context) {
     context = context || this;
 
-    const remove = this.on(event, (...args) => {
+    // const remove = this.on(event, (...args) => {
+    //   remove();
+    //   listener.apply(context, args);
+    // });
+
+    // fast emit
+    const remove = this.on(event, function (a, b, c) {
       remove();
-      listener.apply(context, args);
+
+      switch (arguments.length) {
+        case 0:
+          listener.call(context);
+          break;
+        case 1:
+          listener.call(context, a);
+          break;
+        case 2:
+          listener.call(context, a, b);
+          break;
+        case 3:
+          listener.call(context, a, b, c);
+          break;
+        default: {
+          const len = arguments.length;
+          const args = new Array(len - 1);
+
+          for (let j = 1; j < len; j++) {
+            args[j - 1] = arguments[j];
+          }
+
+          listener.apply(context, args);
+        }
+      }
     });
+    // end
 
     return remove;
   }
