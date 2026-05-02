@@ -31,14 +31,13 @@ export class EventLite {
    * @param {*} [context = this] - Context
    * @returns {this}
    */
-  addListener(event, listener, context) {
+  addListener(event, listener, context = this) {
     if (typeof listener !== "function") {
       throw new TypeError("The listener must be a function");
     }
 
-    context = context || this;
-
     const listeners = this._events[event] || [];
+
     const index = listeners.findIndex(
       (current) => current.fn === listener && current.context === context,
     );
@@ -57,12 +56,10 @@ export class EventLite {
    * @param {*} [context = this] - Context
    * @returns {this}
    */
-  removeListener(event, listener, context) {
+  removeListener(event, listener, context = this) {
     if (this._events.hasOwnProperty(event)) {
-      context = context || this;
-
       this._events[event] = this._events[event].filter(
-        (current) => current.fn !== listener && current.context === context,
+        (current) => !(current.fn === listener && current.context === context),
       );
 
       if (this._events[event].length === 0) {
@@ -114,7 +111,7 @@ export class EventLite {
    * @param {*} [context = this] - Context
    * @returns {() => void} - Remove function
    */
-  on(event, listener, context) {
+  on(event, listener, context = this) {
     this.addListener(event, listener, context);
 
     const makeRemove = () => {
@@ -138,9 +135,7 @@ export class EventLite {
    * @param {*} [context = this] - Context
    * @returns {() => void} - Remove function
    */
-  once(event, listener, context) {
-    context = context || this;
-
+  once(event, listener, context = this) {
     const remove = this.on(event, (...args) => {
       remove();
       listener.apply(context, args);
@@ -156,7 +151,7 @@ export class EventLite {
    * @param {*} [context = this] - Context
    * @returns {this}
    */
-  off(event, listener, context) {
+  off(event, listener, context = this) {
     return listener
       ? this.removeListener(event, listener, context)
       : this.removeAllListeners(event);
