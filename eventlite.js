@@ -28,13 +28,15 @@ export class EventLite {
    * Add an event listener
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
-   * @param {*} [context = this] - Context
+   * @param {*} [context] - Context
    * @returns {this}
    */
-  addListener(event, listener, context = this) {
+  addListener(event, listener, context) {
     if (typeof listener !== "function") {
       throw new TypeError("The listener must be a function");
     }
+
+    context = context || this;
 
     const listeners = this._events[event] || [];
 
@@ -53,11 +55,13 @@ export class EventLite {
    * Remove an event listener
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
-   * @param {*} [context = this] - Context
+   * @param {*} [context] - Context
    * @returns {this}
    */
-  removeListener(event, listener, context = this) {
+  removeListener(event, listener, context) {
     if (this._events.hasOwnProperty(event)) {
+      context = context || this;
+
       this._events[event] = this._events[event].filter(
         (current) => current.fn !== listener || current.context !== context,
       );
@@ -108,10 +112,10 @@ export class EventLite {
    * Add an event listener
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
-   * @param {*} [context = this] - Context
+   * @param {*} [context] - Context
    * @returns {() => void} - Remove function
    */
-  on(event, listener, context = this) {
+  on(event, listener, context) {
     this.addListener(event, listener, context);
 
     const makeRemove = () => {
@@ -132,10 +136,12 @@ export class EventLite {
    * Add an event listener and just emit once
    * @param {string} event - Event name
    * @param {Listener} listener - Listener
-   * @param {*} [context = this] - Context
+   * @param {*} [context] - Context
    * @returns {() => void} - Remove function
    */
-  once(event, listener, context = this) {
+  once(event, listener, context) {
+    context = context || this;
+
     const remove = this.on(event, (...args) => {
       remove();
       listener.apply(context, args);
@@ -148,10 +154,10 @@ export class EventLite {
    * Remove an event listener or remove all event listeners
    * @param {string} event - Event name
    * @param {Listener} [listener] - Listener
-   * @param {*} [context = this] - Context
+   * @param {*} [context] - Context
    * @returns {this}
    */
-  off(event, listener, context = this) {
+  off(event, listener, context) {
     return listener
       ? this.removeListener(event, listener, context)
       : this.removeAllListeners(event);
