@@ -47,6 +47,23 @@ event.emit("hello", "world!");
 
 console.log("-----");
 
+const context = { foo: "bar" };
+
+function emitted() {
+  // @ts-ignore
+  console.log(this === context); // true
+}
+
+event.once("event", emitted, context);
+event.on("another", emitted, context);
+
+event.emit("event");
+event.emit("another");
+
+event.removeListener("another", emitted, context);
+
+console.log("-----");
+
 class Counter {
   constructor() {
     this.count = 0;
