@@ -105,15 +105,17 @@ export class EventLite {
       // }
 
       // fast filter listeners
-      const events = [];
+      let count = 0;
+      const events = new Array(listeners.length);
 
       for (let i = 0; i < listeners.length; i++) {
         if (listeners[i].fn !== listener || listeners[i].context !== context) {
-          events.push(listeners[i]);
+          events[count++] = listeners[i];
         }
       }
 
-      if (events.length > 0) {
+      if (count > 0) {
+        events.length = count;
         this._events[event] = events;
       } else {
         delete this._events[event];
