@@ -19,7 +19,8 @@
   "keywords": [
     "event",
     "emitter",
-    "eventlite"
+    "eventlite",
+    "es6"
   ],
   "author": "shixiongfei",
   "license": "Apache-2.0"
