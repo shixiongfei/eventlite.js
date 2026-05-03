@@ -48,14 +48,16 @@ console.log("-----");
 const context = { foo: "bar" };
 
 function emitted() {
-  console.log(this === context); // true
+  console.log(this === context);
 }
 
 event.once("event", emitted, context);
 event.on("another", emitted, context);
+event.addListener("foo", () => emitted());
 
-event.emit("event");
-event.emit("another");
+event.emit("event"); // true
+event.emit("another"); // true
+event.emit("foo"); // false
 
 event.removeListener("another", emitted, context);
 

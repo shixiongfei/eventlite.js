@@ -51,40 +51,24 @@ export class EventLite {
       if (listeners.fn !== listener || listeners.context != context) {
         this._events[event] = [listeners, { fn: listener, context: context }];
       }
-
       return this;
     }
 
-    // const index = listeners.findIndex(
-    //   (current) => current.fn === listener && current.context === context,
-    // );
-
-    // fast find index
-    let index = -1;
-
     for (let i = 0; i < listeners.length; i++) {
       if (listeners[i].fn === listener && listeners[i].context === context) {
-        index = i;
-        break;
+        return this;
       }
     }
-    // end
 
-    if (index < 0) {
-      // this._events[event] = [...listeners, { fn: listener, context: context }];
+    const events = new Array(listeners.length + 1);
 
-      // fast copy listeners
-      const events = new Array(listeners.length + 1);
-
-      for (let i = 0; i < listeners.length; i++) {
-        events[i] = listeners[i];
-      }
-
-      events[listeners.length] = { fn: listener, context: context };
-
-      this._events[event] = events;
-      // end
+    for (let i = 0; i < listeners.length; i++) {
+      events[i] = listeners[i];
     }
+
+    events[listeners.length] = { fn: listener, context: context };
+
+    this._events[event] = events;
 
     return this;
   }
@@ -105,23 +89,13 @@ export class EventLite {
 
     context = context || this;
 
-    // this._events[event] = this._events[event].filter(
-    //   (current) => current.fn !== listener || current.context !== context,
-    // );
-    //
-    // if (this._events[event].length === 0) {
-    //   delete this._events[event];
-    // }
-
     if (listeners.fn) {
       if (listeners.fn === listener && listeners.context === context) {
         delete this._events[event];
       }
-
       return this;
     }
 
-    // fast filter listeners
     let count = 0;
     const events = new Array(listeners.length);
 
@@ -143,7 +117,6 @@ export class EventLite {
 
     events.length = count;
     this._events[event] = events;
-    // end
 
     return this;
   }
@@ -173,13 +146,6 @@ export class EventLite {
    * @return {this}
    */
   emit(event, a, b, c, d, e) {
-    // if (this._events[event]) {
-    //   this._events[event].forEach((listener) =>
-    //     listener.fn.apply(listener.context, args),
-    //   );
-    // }
-
-    // fast emit
     const listeners = this._events[event];
 
     if (!listeners) {
@@ -256,7 +222,6 @@ export class EventLite {
         }
       }
     }
-    // end
 
     return this;
   }
@@ -293,12 +258,6 @@ export class EventLite {
   once(event, listener, context) {
     context = context || this;
 
-    // const remove = this.on(event, (...args) => {
-    //   remove();
-    //   listener.apply(context, args);
-    // });
-
-    // fast emit
     const remove = this.on(event, function (a, b, c, d, e) {
       remove();
 
@@ -334,7 +293,6 @@ export class EventLite {
         }
       }
     });
-    // end
 
     return remove;
   }
