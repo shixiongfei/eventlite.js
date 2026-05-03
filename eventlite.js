@@ -78,23 +78,24 @@ export class EventLite {
   /**
    * Add an event listener
    * @param {string} event - Event name
-   * @param {Listener} listener - Listener
+   * @param {Listener} fn - Listener
    * @param {*} [context] - Context
+   * @param {boolean} [once = false] - Once listener
    * @returns {this}
    */
-  addListener(event, listener, context) {
-    _newEL(this._events, event, listener, context || this, false);
+  addListener(event, fn, context, once = false) {
+    _newEL(this._events, event, fn, context || this, once);
     return this;
   }
 
   /**
    * Remove an event listener
    * @param {string} event - Event name
-   * @param {Listener} listener - Listener
+   * @param {Listener} fn - Listener
    * @param {*} [context] - Context
    * @returns {this}
    */
-  removeListener(event, listener, context) {
+  removeListener(event, fn, context) {
     const listeners = this._events.get(event);
 
     if (!listeners) {
@@ -104,7 +105,7 @@ export class EventLite {
     context = context || this;
 
     if (listeners.fn) {
-      if (listeners.fn === listener && listeners.context === context) {
+      if (listeners.fn === fn && listeners.context === context) {
         listeners.removed = true;
         this._events.delete(event);
       }
@@ -115,7 +116,7 @@ export class EventLite {
     const events = new Array(listeners.length);
 
     for (let i = 0; i < listeners.length; i++) {
-      if (listeners[i].fn !== listener || listeners[i].context !== context) {
+      if (listeners[i].fn !== fn || listeners[i].context !== context) {
         events[count++] = listeners[i];
       } else {
         listeners[i].removed = true;
@@ -254,49 +255,47 @@ export class EventLite {
   /**
    * Add an event listener
    * @param {string} event - Event name
-   * @param {Listener} listener - Listener
+   * @param {Listener} fn - Listener
    * @param {*} [context] - Context
    * @returns {() => void} - Remove function
    */
-  on(event, listener, context) {
-    const el = _newEL(this._events, event, listener, context || this, false);
+  on(event, fn, context) {
+    const el = _newEL(this._events, event, fn, context || this, false);
 
     return () => {
-      if (!el || el.removed) {
-        return;
+      if (el && !el.removed) {
+        this.removeListener(event, el.fn, el.context);
       }
-      this.removeListener(event, el.fn, el.context);
     };
   }
 
   /**
    * Add an event listener and just emit once
    * @param {string} event - Event name
-   * @param {Listener} listener - Listener
+   * @param {Listener} fn - Listener
    * @param {*} [context] - Context
    * @returns {() => void} - Remove function
    */
-  once(event, listener, context) {
-    const el = _newEL(this._events, event, listener, context || this, true);
+  once(event, fn, context) {
+    const el = _newEL(this._events, event, fn, context || this, true);
 
     return () => {
-      if (!el || el.removed) {
-        return;
+      if (el && !el.removed) {
+        this.removeListener(event, el.fn, el.context);
       }
-      this.removeListener(event, el.fn, el.context);
     };
   }
 
   /**
    * Remove an event listener or remove all event listeners
    * @param {string} event - Event name
-   * @param {Listener} [listener] - Listener
+   * @param {Listener} [fn] - Listener
    * @param {*} [context] - Context
    * @returns {this}
    */
-  off(event, listener, context) {
-    return listener
-      ? this.removeListener(event, listener, context)
+  off(event, fn, context) {
+    return fn
+      ? this.removeListener(event, fn, context)
       : this.removeAllListeners(event);
   }
 

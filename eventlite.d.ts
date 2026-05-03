@@ -16,10 +16,10 @@ export declare class EventLite {
   constructor();
 
   /** Add an event listener */
-  addListener(event: string, listener: Listener, context?: any): this;
+  addListener(event: string, fn: Listener, context?: any, once?: boolean): this;
 
   /** Remove an event listener */
-  removeListener(event: string, listener: Listener, context?: any): this;
+  removeListener(event: string, fn: Listener, context?: any): this;
 
   /** Remove all event listeners */
   removeAllListeners(event?: string): this;
@@ -28,13 +28,13 @@ export declare class EventLite {
   emit(event: string, ...args: any[]): this;
 
   /** Add an event listener */
-  on(event: string, listener: Listener, context?: any): () => void;
+  on(event: string, fn: Listener, context?: any): () => void;
 
   /** Add an event listener and just emit once */
-  once(event: string, listener: Listener, context?: any): () => void;
+  once(event: string, fn: Listener, context?: any): () => void;
 
   /** Remove an event listener or remove all event listeners */
-  off(event: string, listener?: Listener, context?: any): this;
+  off(event: string, fn?: Listener, context?: any): this;
 
   /** Get all event names */
   eventNames(): string[];
