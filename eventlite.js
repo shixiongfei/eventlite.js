@@ -15,7 +15,7 @@
  */
 
 /**
- * @param {{[event: string]: EventListener | EventListener[]}} _events
+ * @param {Map<string, EventListener | EventListener[]>} _events
  * @param {string} event
  * @param {Listener} fn
  * @param {*} context
@@ -27,12 +27,12 @@ function _newEL(_events, event, fn, context, once) {
     throw new TypeError("The listener must be a function");
   }
 
-  const listeners = _events[event];
+  const listeners = _events.get(event);
 
   if (!listeners) {
     const listener = { fn, context, once, removed: false };
 
-    _events[event] = listener;
+    _events.set(event, listener);
     return listener;
   }
 
@@ -40,7 +40,7 @@ function _newEL(_events, event, fn, context, once) {
     if (listeners.fn !== fn || listeners.context != context) {
       const listener = { fn, context, once, removed: false };
 
-      _events[event] = [listeners, listener];
+      _events.set(event, [listeners, listener]);
       return listener;
     }
 
@@ -61,7 +61,7 @@ function _newEL(_events, event, fn, context, once) {
   }
 
   events[listeners.length] = listener;
-  _events[event] = events;
+  _events.set(event, events);
 
   return listener;
 }
@@ -71,8 +71,8 @@ function _newEL(_events, event, fn, context, once) {
  */
 export class EventLite {
   constructor() {
-    /** @type {{[event: string]: EventListener | EventListener[]}} */
-    this._events = Object.create(null);
+    /** @type {Map<string, EventListener | EventListener[]>} */
+    this._events = new Map();
   }
 
   /**
@@ -95,7 +95,7 @@ export class EventLite {
    * @returns {this}
    */
   removeListener(event, listener, context) {
-    const listeners = this._events[event];
+    const listeners = this._events.get(event);
 
     if (!listeners) {
       return this;
@@ -106,7 +106,7 @@ export class EventLite {
     if (listeners.fn) {
       if (listeners.fn === listener && listeners.context === context) {
         listeners.removed = true;
-        delete this._events[event];
+        this._events.delete(event);
       }
       return this;
     }
@@ -123,17 +123,17 @@ export class EventLite {
     }
 
     if (count === 0) {
-      delete this._events[event];
+      this._events.delete(event);
       return this;
     }
 
     if (count === 1) {
-      this._events[event] = events[0];
+      this._events.set(event, events[0]);
       return this;
     }
 
     events.length = count;
-    this._events[event] = events;
+    this._events.set(event, events);
 
     return this;
   }
@@ -145,12 +145,12 @@ export class EventLite {
    */
   removeAllListeners(event) {
     if (!event) {
-      this._events = Object.create(null);
+      this._events.clear();
       return this;
     }
 
-    if (this._events[event]) {
-      delete this._events[event];
+    if (this._events.has(event)) {
+      this._events.delete(event);
     }
 
     return this;
@@ -163,7 +163,7 @@ export class EventLite {
    * @return {this}
    */
   emit(event, a, b, c, d, e) {
-    const listeners = this._events[event];
+    const listeners = this._events.get(event);
 
     if (!listeners) {
       return this;
@@ -305,7 +305,7 @@ export class EventLite {
    * @returns {string[]}
    */
   eventNames() {
-    return Object.keys(this._events);
+    return Array.from(this._events.keys());
   }
 
   /**
@@ -314,7 +314,7 @@ export class EventLite {
    * @returns {Listener[]}
    */
   listeners(event) {
-    const events = this._events[event];
+    const events = this._events.get(event);
 
     if (!events) {
       return [];
