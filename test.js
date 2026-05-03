@@ -220,4 +220,47 @@ describe("EventLite Unit Test", () => {
       ["bar", "baz", "boom", "hello", "world", "!!!"],
     ]);
   });
+
+  test("class", () => {
+    const output = [];
+
+    class Counter extends EventLite {
+      constructor() {
+        super();
+        this.count = 0;
+
+        this.addListener("add", this.onAdd, this);
+        this.addListener("sub", this.onSub, this);
+      }
+
+      onAdd(value = 1) {
+        this.count += value;
+        this.emit("changed", value, this.count);
+      }
+
+      onSub(value = 1) {
+        this.count -= value;
+        this.emit("changed", -value, this.count);
+      }
+    }
+
+    const counter = new Counter();
+
+    const unsubscribe = counter.on("changed", (value, count) => {
+      output.push([value, count]);
+    });
+
+    counter.emit("add");
+    counter.emit("add", 10);
+    counter.emit("sub", 5);
+    counter.emit("sub");
+
+    assert.deepStrictEqual(output, [
+      [1, 1],
+      [10, 11],
+      [-5, 6],
+      [-1, 5],
+    ]);
+    assert.strictEqual(counter.count, 5);
+  });
 });
