@@ -9,152 +9,215 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
+import assert from "node:assert";
+import { describe, test } from "node:test";
 import EventLite, { eventlite } from "./eventlite.js";
 
-const event = eventlite();
+describe("EventLite Unit Test", () => {
+  test("not repeated listeners", () => {
+    const output = [];
+    const el = eventlite();
 
-event.addListener("hello", console.log);
+    const emitted = (text) => {
+      output.push(text);
+    };
 
-// The same listener will ignore
-event.addListener("hello", console.log);
+    el.addListener("foo", emitted);
+    el.addListener("foo", emitted);
+    el.emit("foo", "bar");
 
-// Will see "world!"" 1 time
-event.emit("hello", "world!");
+    assert.strictEqual(el.listeners("foo").length, 1);
+    assert.deepStrictEqual(output, ["bar"]);
+  });
 
-console.log("-----");
+  test("add and remove", () => {
+    const el = eventlite();
 
-// Only trigger 1 time
-event.once("hello", (...args) => console.log("Once!", ...args));
+    const emitted = () => {};
 
-const remove = event.on("hello", (...args) => console.log(...args));
+    el.addListener("foo", () => {});
+    assert.strictEqual(el.listeners("foo").length, 1);
 
-// Will see "world!" 3 times
-event.emit("hello", "world!");
+    el.addListener("foo", emitted);
+    assert.strictEqual(el.listeners("foo").length, 2);
 
-console.log("-----");
+    el.addListener("foo", () => {});
+    assert.strictEqual(el.listeners("foo").length, 3);
 
-// Again, will see "world!" 2 times
-event.emit("hello", "world!");
+    el.removeListener("foo", emitted);
+    assert.strictEqual(el.listeners("foo").length, 2);
 
-console.log("-----");
+    el.removeAllListeners("foo");
+    assert.strictEqual(el.listeners("foo").length, 0);
 
-remove();
-remove();
+    el.addListener("foo", emitted);
+    assert.strictEqual(el.listeners("foo").length, 1);
 
-// Will see "world!"" 1 time
-event.emit("hello", "world!");
+    el.removeListener("foo", emitted);
+    assert.strictEqual(el.listeners("foo").length, 0);
 
-console.log("-----");
+    el.addListener("bar", () => {});
+    assert.strictEqual(el.listeners("bar").length, 1);
 
-const context = { foo: "bar" };
+    el.addListener("bar", emitted);
+    assert.strictEqual(el.listeners("bar").length, 2);
 
-function emitted() {
-  console.log(this === context);
-}
+    el.removeAllListeners();
+    assert.strictEqual(el.listeners("bar").length, 0);
 
-event.once("event", emitted, context);
-event.on("another", emitted, context);
-event.addListener("foo", () => emitted());
+    assert.deepStrictEqual(el.eventNames(), []);
+  });
 
-event.emit("event"); // true
-event.emit("another"); // true
-event.emit("foo"); // false
+  test("stable iteration 1", () => {
+    const output = [];
+    const el = eventlite();
 
-event.removeListener("another", emitted, context);
+    const emitted1 = (text) => {
+      output.push(text);
+    };
 
-console.log("-----");
+    const emitted2 = (text) => {
+      el.once("foo", emitted1);
+      output.push(text);
+    };
 
-event.addListener("bar", () => {
-  console.log("Bar 1");
+    el.on("foo", emitted2);
+    el.emit("foo", "bar");
+    el.emit("foo", "baz");
+    el.emit("foo", "foobar");
 
-  event.addListener("bar", () => {
-    console.log("Bar 2");
+    assert.deepStrictEqual(output, ["bar", "baz", "baz", "foobar"]);
+  });
+
+  test("stable iteration 2", () => {
+    const output = [];
+    const el = eventlite();
+
+    const emitted1 = (text) => {
+      output.push(text);
+    };
+
+    const emitted2 = (text) => {
+      el.removeListener("foo", emitted1);
+      output.push(text);
+    };
+
+    el.on("foo", emitted1);
+    el.on("foo", emitted2);
+    el.emit("foo", "bar");
+    el.emit("foo", "baz");
+
+    assert.deepStrictEqual(output, ["bar", "bar", "baz"]);
+
+    el.off("foo", emitted2);
+    assert.strictEqual(el.listeners("foo").length, 0);
+  });
+
+  test("remove function", () => {
+    const el = eventlite();
+
+    const removes = [
+      el.on("foo", console.log),
+      el.once("foo", (...args) => console.log(...args)),
+    ];
+
+    assert.strictEqual(el.listeners("foo").length, 2);
+
+    removes.forEach((remove) => remove());
+
+    assert.strictEqual(el.listeners("foo").length, 0);
+  });
+
+  test("context", () => {
+    const context = { count: 0 };
+    const el = eventlite();
+
+    function add(value = 1) {
+      this.count += value;
+    }
+
+    function sub(value = 1) {
+      this.count -= value;
+    }
+
+    el.on("add", add, context);
+    el.on("sub", sub, context);
+
+    el.emit("add");
+    el.emit("add", 10);
+    el.emit("sub", 5);
+    el.emit("sub");
+
+    assert.strictEqual(context.count, 5);
+  });
+
+  test("emit", () => {
+    const output = [];
+    const el = eventlite();
+
+    const emitted = (...args) => {
+      output.push(args);
+    };
+
+    el.emit("foo");
+    el.emit("foo", "bar");
+    el.emit("foo", "bar", "baz");
+    el.emit("foo", "bar", "baz", "boom");
+    el.emit("foo", "bar", "baz", "boom", "hello");
+    el.emit("foo", "bar", "baz", "boom", "hello", "world");
+    el.emit("foo", "bar", "baz", "boom", "hello", "world", "!!!");
+
+    assert.deepStrictEqual(output, []);
+
+    el.on("foo", emitted);
+
+    el.emit("foo");
+    el.emit("foo", "bar");
+    el.emit("foo", "bar", "baz");
+    el.emit("foo", "bar", "baz", "boom");
+    el.emit("foo", "bar", "baz", "boom", "hello");
+    el.emit("foo", "bar", "baz", "boom", "hello", "world");
+    el.emit("foo", "bar", "baz", "boom", "hello", "world", "!!!");
+
+    assert.deepStrictEqual(output, [
+      [],
+      ["bar"],
+      ["bar", "baz"],
+      ["bar", "baz", "boom"],
+      ["bar", "baz", "boom", "hello"],
+      ["bar", "baz", "boom", "hello", "world"],
+      ["bar", "baz", "boom", "hello", "world", "!!!"],
+    ]);
+
+    output.splice(0, output.length);
+
+    el.on("foo", (...args) => {
+      output.push(args);
+    });
+
+    el.emit("foo");
+    el.emit("foo", "bar");
+    el.emit("foo", "bar", "baz");
+    el.emit("foo", "bar", "baz", "boom");
+    el.emit("foo", "bar", "baz", "boom", "hello");
+    el.emit("foo", "bar", "baz", "boom", "hello", "world");
+    el.emit("foo", "bar", "baz", "boom", "hello", "world", "!!!");
+
+    assert.deepStrictEqual(output, [
+      [],
+      [],
+      ["bar"],
+      ["bar"],
+      ["bar", "baz"],
+      ["bar", "baz"],
+      ["bar", "baz", "boom"],
+      ["bar", "baz", "boom"],
+      ["bar", "baz", "boom", "hello"],
+      ["bar", "baz", "boom", "hello"],
+      ["bar", "baz", "boom", "hello", "world"],
+      ["bar", "baz", "boom", "hello", "world"],
+      ["bar", "baz", "boom", "hello", "world", "!!!"],
+      ["bar", "baz", "boom", "hello", "world", "!!!"],
+    ]);
   });
 });
-
-// This emit will not see "Bar 2"
-event.emit("bar");
-// This emit will see "Bar 2"
-event.emit("bar");
-
-console.log("-----");
-
-function baz2() {
-  console.log("Baz 2");
-}
-
-function baz1() {
-  console.log("Baz 1");
-
-  event.removeListener("baz", baz2);
-}
-
-event.addListener("baz", baz1);
-event.addListener("baz", baz2);
-
-// This emit will see both "Baz 1" and "Baz 2"
-event.emit("baz");
-// This emit will ony see "Baz 1"
-event.emit("baz");
-
-console.log("-----");
-
-class Counter {
-  constructor() {
-    this.count = 0;
-    console.log("Counter init", this.count);
-  }
-
-  add(value = 1) {
-    this.count += value;
-    console.log("Counter add", value, "now is", this.count);
-  }
-
-  sub(value = 1) {
-    this.count -= value;
-    console.log("Counter sub", value, "now is", this.count);
-  }
-}
-
-const counter = new Counter();
-
-event.on("add", counter.add, counter);
-event.once("sub", counter.sub, counter);
-
-event.emit("add");
-event.emit("add", 10);
-event.emit("sub", 5);
-event.emit("sub");
-
-console.log("-----");
-
-console.log(event.eventNames());
-console.log(event.listeners("hello"));
-console.log(event.listeners("world"));
-console.log(event.listeners("add"));
-console.log(event.listeners("sub"));
-
-console.log("-----");
-
-class Countdown extends EventLite {
-  /** @param {number} seconds */
-  constructor(seconds) {
-    super();
-
-    setTimeout(
-      function trigger() {
-        if (seconds < 1) {
-          return;
-        }
-
-        this.emit("countdown", --seconds);
-        setTimeout(trigger.bind(this), 1000);
-      }.bind(this),
-      1000,
-    );
-  }
-}
-
-const countdown = new Countdown(10);
-
-countdown.on("countdown", (seconds) => console.log("Countdown:", seconds));
