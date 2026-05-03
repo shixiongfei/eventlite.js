@@ -48,10 +48,11 @@ export class EventLite {
     }
 
     if (listeners.fn) {
-      if (listeners.fn !== listener || listeners.context != context) {
-        this._events[event] = [listeners, { fn: listener, context: context }];
+      if (listeners.fn === listener && listeners.context === context) {
+        return this;
       }
 
+      this._events[event] = [listeners, { fn: listener, context: context }];
       return this;
     }
 
@@ -131,14 +132,18 @@ export class EventLite {
       }
     }
 
+    if (count === 0) {
+      delete this._events[event];
+      return this;
+    }
+
     if (count === 1) {
       this._events[event] = events[0];
-    } else if (count > 1) {
-      events.length = count;
-      this._events[event] = events;
-    } else {
-      delete this._events[event];
+      return this;
     }
+
+    events.length = count;
+    this._events[event] = events;
     // end
 
     return this;
