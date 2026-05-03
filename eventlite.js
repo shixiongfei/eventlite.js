@@ -9,8 +9,6 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
-// @ts-check
-
 /**
  * @typedef {(...args: any[]) => void} Listener
  */
@@ -101,45 +99,47 @@ export class EventLite {
   removeListener(event, listener, context) {
     const listeners = this._events[event];
 
-    if (listeners) {
-      context = context || this;
+    if (!listeners) {
+      return this;
+    }
 
-      // this._events[event] = this._events[event].filter(
-      //   (current) => current.fn !== listener || current.context !== context,
-      // );
-      //
-      // if (this._events[event].length === 0) {
-      //   delete this._events[event];
-      // }
+    context = context || this;
 
-      if (listeners.fn) {
-        if (listeners.fn === listener && listeners.context === context) {
-          delete this._events[event];
-        }
+    // this._events[event] = this._events[event].filter(
+    //   (current) => current.fn !== listener || current.context !== context,
+    // );
+    //
+    // if (this._events[event].length === 0) {
+    //   delete this._events[event];
+    // }
 
-        return this;
-      }
-
-      // fast filter listeners
-      let count = 0;
-      const events = new Array(listeners.length);
-
-      for (let i = 0; i < listeners.length; i++) {
-        if (listeners[i].fn !== listener || listeners[i].context !== context) {
-          events[count++] = listeners[i];
-        }
-      }
-
-      if (count === 1) {
-        this._events[event] = events[0];
-      } else if (count > 1) {
-        events.length = count;
-        this._events[event] = events;
-      } else {
+    if (listeners.fn) {
+      if (listeners.fn === listener && listeners.context === context) {
         delete this._events[event];
       }
-      // end
+
+      return this;
     }
+
+    // fast filter listeners
+    let count = 0;
+    const events = new Array(listeners.length);
+
+    for (let i = 0; i < listeners.length; i++) {
+      if (listeners[i].fn !== listener || listeners[i].context !== context) {
+        events[count++] = listeners[i];
+      }
+    }
+
+    if (count === 1) {
+      this._events[event] = events[0];
+    } else if (count > 1) {
+      events.length = count;
+      this._events[event] = events;
+    } else {
+      delete this._events[event];
+    }
+    // end
 
     return this;
   }
@@ -182,7 +182,6 @@ export class EventLite {
       return this;
     }
 
-    let args;
     const len = arguments.length;
 
     if (listeners.fn) {
@@ -207,7 +206,7 @@ export class EventLite {
           return this;
       }
 
-      args = new Array(len - 1);
+      const args = new Array(len - 1);
 
       for (let i = 1; i < len; i++) {
         args[i - 1] = arguments[i];
@@ -217,6 +216,8 @@ export class EventLite {
 
       return this;
     }
+
+    let args;
 
     for (let i = 0; i < listeners.length; i++) {
       switch (len) {
