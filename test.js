@@ -39,6 +39,7 @@ event.emit("hello", "world!");
 console.log("-----");
 
 remove();
+remove();
 
 // Will see "world!"" 1 time
 event.emit("hello", "world!");

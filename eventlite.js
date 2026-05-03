@@ -11,16 +11,65 @@
 
 /**
  * @typedef {(...args: any[]) => void} Listener
+ * @typedef {{fn: Listener, context: any, once: boolean, removed: boolean}} EventListener
  */
+
+/**
+ * @param {{[event: string]: EventListener | EventListener[]}} _events
+ * @param {string} event
+ * @param {Listener} fn
+ * @param {*} context
+ * @param {boolean} once
+ * @returns {EventListener | undefined}
+ */
+function _newEL(_events, event, fn, context, once) {
+  if (typeof fn !== "function") {
+    throw new TypeError("The listener must be a function");
+  }
+
+  const listeners = _events[event];
+
+  if (!listeners) {
+    const listener = { fn, context, once, removed: false };
+
+    _events[event] = listener;
+    return listener;
+  }
+
+  if (listeners.fn) {
+    if (listeners.fn !== fn || listeners.context != context) {
+      const listener = { fn, context, once, removed: false };
+
+      _events[event] = [listeners, listener];
+      return listener;
+    }
+
+    return undefined;
+  }
+
+  for (let i = 0; i < listeners.length; i++) {
+    if (listeners[i].fn === fn && listeners[i].context === context) {
+      return undefined;
+    }
+  }
+
+  const listener = { fn, context, once, removed: false };
+  const events = new Array(listeners.length + 1);
+
+  for (let i = 0; i < listeners.length; i++) {
+    events[i] = listeners[i];
+  }
+
+  events[listeners.length] = listener;
+  _events[event] = events;
+
+  return listener;
+}
 
 /**
  * A very simple and fast event emitter
  */
 export class EventLite {
-  /**
-   * @typedef {{fn: Listener, context: any}} EventListener
-   */
-
   constructor() {
     /** @type {{[event: string]: EventListener | EventListener[]}} */
     this._events = Object.create(null);
@@ -34,42 +83,7 @@ export class EventLite {
    * @returns {this}
    */
   addListener(event, listener, context) {
-    if (typeof listener !== "function") {
-      throw new TypeError("The listener must be a function");
-    }
-
-    context = context || this;
-
-    const listeners = this._events[event];
-
-    if (!listeners) {
-      this._events[event] = { fn: listener, context: context };
-      return this;
-    }
-
-    if (listeners.fn) {
-      if (listeners.fn !== listener || listeners.context != context) {
-        this._events[event] = [listeners, { fn: listener, context: context }];
-      }
-      return this;
-    }
-
-    for (let i = 0; i < listeners.length; i++) {
-      if (listeners[i].fn === listener && listeners[i].context === context) {
-        return this;
-      }
-    }
-
-    const events = new Array(listeners.length + 1);
-
-    for (let i = 0; i < listeners.length; i++) {
-      events[i] = listeners[i];
-    }
-
-    events[listeners.length] = { fn: listener, context: context };
-
-    this._events[event] = events;
-
+    _newEL(this._events, event, listener, context || this, false);
     return this;
   }
 
@@ -91,6 +105,7 @@ export class EventLite {
 
     if (listeners.fn) {
       if (listeners.fn === listener && listeners.context === context) {
+        listeners.removed = true;
         delete this._events[event];
       }
       return this;
@@ -102,6 +117,8 @@ export class EventLite {
     for (let i = 0; i < listeners.length; i++) {
       if (listeners[i].fn !== listener || listeners[i].context !== context) {
         events[count++] = listeners[i];
+      } else {
+        listeners[i].removed = true;
       }
     }
 
@@ -155,6 +172,10 @@ export class EventLite {
     const len = arguments.length;
 
     if (listeners.fn) {
+      if (listeners.once) {
+        this.removeListener(event, listeners.fn, listeners.context);
+      }
+
       switch (len) {
         case 1:
           listeners.fn.call(listeners.context);
@@ -190,6 +211,10 @@ export class EventLite {
     let args;
 
     for (let i = 0; i < listeners.length; i++) {
+      if (listeners[i].once) {
+        this.removeListener(event, listeners[i].fn, listeners[i].context);
+      }
+
       switch (len) {
         case 1:
           listeners[i].fn.call(listeners[i].context);
@@ -234,17 +259,13 @@ export class EventLite {
    * @returns {() => void} - Remove function
    */
   on(event, listener, context) {
-    context = context || this;
-
-    this.addListener(event, listener, context);
-
-    let removed = false;
+    const el = _newEL(this._events, event, listener, context || this, false);
 
     return () => {
-      if (!removed) {
-        removed = true;
-        this.removeListener(event, listener, context);
+      if (!el || el.removed) {
+        return;
       }
+      this.removeListener(event, el.fn, el.context);
     };
   }
 
@@ -256,45 +277,14 @@ export class EventLite {
    * @returns {() => void} - Remove function
    */
   once(event, listener, context) {
-    context = context || this;
+    const el = _newEL(this._events, event, listener, context || this, true);
 
-    const remove = this.on(event, function (a, b, c, d, e) {
-      remove();
-
-      const len = arguments.length;
-
-      switch (len) {
-        case 0:
-          listener.call(context);
-          break;
-        case 1:
-          listener.call(context, a);
-          break;
-        case 2:
-          listener.call(context, a, b);
-          break;
-        case 3:
-          listener.call(context, a, b, c);
-          break;
-        case 4:
-          listener.call(context, a, b, c, d);
-          break;
-        case 5:
-          listener.call(context, a, b, c, d, e);
-          break;
-        default: {
-          const args = new Array(len);
-
-          for (let i = 0; i < len; i++) {
-            args[i] = arguments[i];
-          }
-
-          listener.apply(context, args);
-        }
+    return () => {
+      if (!el || el.removed) {
+        return;
       }
-    });
-
-    return remove;
+      this.removeListener(event, el.fn, el.context);
+    };
   }
 
   /**
