@@ -49,7 +49,7 @@ export class EventLite {
       return this;
     }
 
-    if (!Array.isArray(listeners)) {
+    if (listeners.fn) {
       if (listeners.fn !== listener || listeners.context != context) {
         this._events[event] = [listeners, { fn: listener, context: context }];
       }
@@ -112,7 +112,7 @@ export class EventLite {
       //   delete this._events[event];
       // }
 
-      if (!Array.isArray(listeners)) {
+      if (listeners.fn) {
         if (listeners.fn === listener && listeners.context === context) {
           delete this._events[event];
         }
@@ -130,7 +130,9 @@ export class EventLite {
         }
       }
 
-      if (count > 0) {
+      if (count === 1) {
+        this._events[event] = events[0];
+      } else if (count > 1) {
         events.length = count;
         this._events[event] = events;
       } else {
@@ -180,9 +182,10 @@ export class EventLite {
       return this;
     }
 
+    let args;
     const len = arguments.length;
 
-    if (!Array.isArray(listeners)) {
+    if (listeners.fn) {
       switch (len) {
         case 1:
           listeners.fn.call(listeners.context);
@@ -204,45 +207,51 @@ export class EventLite {
           return this;
       }
 
-      const args = new Array(len - 1);
+      args = new Array(len - 1);
 
       for (let i = 1; i < len; i++) {
         args[i - 1] = arguments[i];
       }
 
       listeners.fn.apply(listeners.context, args);
-    } else {
-      let args;
 
-      for (let i = 0; i < listeners.length; i++) {
-        switch (len) {
-          case 1:
-            listeners[i].fn.call(listeners[i].context);
-            break;
-          case 2:
-            listeners[i].fn.call(listeners[i].context, a);
-            break;
-          case 3:
-            listeners[i].fn.call(listeners[i].context, a, b);
-            break;
-          case 4:
-            listeners[i].fn.call(listeners[i].context, a, b, c);
-            break;
-          default: {
-            if (!args) {
-              args = new Array(len - 1);
+      return this;
+    }
 
-              for (let j = 1; j < len; j++) {
-                args[j - 1] = arguments[j];
-              }
+    for (let i = 0; i < listeners.length; i++) {
+      switch (len) {
+        case 1:
+          listeners[i].fn.call(listeners[i].context);
+          break;
+        case 2:
+          listeners[i].fn.call(listeners[i].context, a);
+          break;
+        case 3:
+          listeners[i].fn.call(listeners[i].context, a, b);
+          break;
+        case 4:
+          listeners[i].fn.call(listeners[i].context, a, b, c);
+          break;
+        case 5:
+          listeners[i].fn.call(listeners[i].context, a, b, c, d);
+          break;
+        case 6:
+          listeners[i].fn.call(listeners[i].context, a, b, c, d, e);
+          break;
+        default: {
+          if (!args) {
+            args = new Array(len - 1);
+
+            for (let j = 1; j < len; j++) {
+              args[j - 1] = arguments[j];
             }
-
-            listeners[i].fn.apply(listeners[i].context, args);
           }
+
+          listeners[i].fn.apply(listeners[i].context, args);
         }
       }
-      // end
     }
+    // end
 
     return this;
   }
@@ -288,7 +297,9 @@ export class EventLite {
     const remove = this.on(event, function (a, b, c, d, e) {
       remove();
 
-      switch (arguments.length) {
+      const len = arguments.length;
+
+      switch (len) {
         case 0:
           listener.call(context);
           break;
@@ -308,7 +319,6 @@ export class EventLite {
           listener.call(context, a, b, c, d, e);
           break;
         default: {
-          const len = arguments.length;
           const args = new Array(len);
 
           for (let i = 0; i < len; i++) {
@@ -351,15 +361,23 @@ export class EventLite {
    * @returns {Listener[]}
    */
   listeners(event) {
-    const listeners = this._events[event];
+    const events = this._events[event];
 
-    if (!listeners) {
+    if (!events) {
       return [];
     }
 
-    return Array.isArray(listeners)
-      ? listeners.map((listener) => listener.fn)
-      : [listeners.fn];
+    if (events.fn) {
+      return [events.fn];
+    }
+
+    const listeners = new Array(events.length);
+
+    for (let i = 0; i < events.length; i++) {
+      listeners[i] = events[i].fn;
+    }
+
+    return listeners;
   }
 }
 

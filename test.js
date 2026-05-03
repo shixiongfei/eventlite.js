@@ -9,8 +9,6 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
-// @ts-check
-
 import EventLite, { eventlite } from "./eventlite.js";
 
 const event = eventlite();
@@ -50,7 +48,6 @@ console.log("-----");
 const context = { foo: "bar" };
 
 function emitted() {
-  // @ts-ignore
   console.log(this === context); // true
 }
 
@@ -112,9 +109,7 @@ class Countdown extends EventLite {
           return;
         }
 
-        // @ts-ignore
         this.emit("countdown", --seconds);
-        // @ts-ignore
         setTimeout(trigger.bind(this), 1000);
       }.bind(this),
       1000,

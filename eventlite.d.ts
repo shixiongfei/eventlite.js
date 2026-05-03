@@ -9,8 +9,6 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
-// @ts-check
-
 export declare type Listener = (...args: any[]) => void;
 
 /** A very simple and fast event emittera */
