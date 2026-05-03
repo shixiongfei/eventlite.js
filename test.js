@@ -63,6 +63,41 @@ event.removeListener("another", emitted, context);
 
 console.log("-----");
 
+event.addListener("bar", () => {
+  console.log("Bar 1");
+
+  event.addListener("bar", () => {
+    console.log("Bar 2");
+  });
+});
+
+// This emit will not see "Bar 2"
+event.emit("bar");
+// This emit will see "Bar 2"
+event.emit("bar");
+
+console.log("-----");
+
+function baz2() {
+  console.log("Baz 2");
+}
+
+function baz1() {
+  console.log("Baz 1");
+
+  event.removeListener("baz", baz2);
+}
+
+event.addListener("baz", baz1);
+event.addListener("baz", baz2);
+
+// This emit will see both "Baz 1" and "Baz 2"
+event.emit("baz");
+// This emit will ony see "Baz 1"
+event.emit("baz");
+
+console.log("-----");
+
 class Counter {
   constructor() {
     this.count = 0;
