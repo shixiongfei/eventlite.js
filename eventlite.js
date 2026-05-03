@@ -48,11 +48,10 @@ export class EventLite {
     }
 
     if (listeners.fn) {
-      if (listeners.fn === listener && listeners.context === context) {
-        return this;
+      if (listeners.fn !== listener || listeners.context != context) {
+        this._events[event] = [listeners, { fn: listener, context: context }];
       }
 
-      this._events[event] = [listeners, { fn: listener, context: context }];
       return this;
     }
 
