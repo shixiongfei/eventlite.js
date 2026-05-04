@@ -33,19 +33,26 @@ class FastMap {
     this._map = new _Map();
   }
 
+  /** @param {string} key */
   has(key) {
     return this._map[key] !== undefined;
   }
 
+  /** @param {string} key */
   get(key) {
     return this._map[key];
   }
 
+  /**
+   * @param {string} key
+   * @param {*) value
+   */
   set(key, value) {
     this._map[key] = value;
     return this;
   }
 
+  /** @param {string} key */
   delete(key) {
     if (!this._map[key]) {
       return false;
