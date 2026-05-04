@@ -14,6 +14,64 @@
  * @typedef {{fn: Listener, context: any, once: boolean, removed: boolean}} EventListener
  */
 
+function _Map() {}
+
+if (Object.create) {
+  _Map.prototype = Object.create(null);
+}
+
+class FastMap {
+  constructor() {
+    this._map = new _Map();
+  }
+
+  get isFastMap() {
+    return true;
+  }
+
+  clear() {
+    this._map = new _Map();
+  }
+
+  has(key) {
+    return this._map[key] !== undefined;
+  }
+
+  get(key) {
+    return this._map[key];
+  }
+
+  set(key, value) {
+    this._map[key] = value;
+    return this;
+  }
+
+  delete(key) {
+    if (!this._map[key]) {
+      return false;
+    }
+
+    this._map[key] = undefined;
+    return true;
+  }
+
+  *keys() {
+    for (const key in this._map) {
+      if (this._map[key]) {
+        yield key;
+      }
+    }
+  }
+
+  *values() {
+    for (const key in this._map) {
+      if (this._map[key]) {
+        yield this._map[key];
+      }
+    }
+  }
+}
+
 /**
  * @param {Map<string, EventListener | EventListener[]>} _events
  * @param {string} event
@@ -37,7 +95,7 @@ function _newEL(_events, event, fn, context, once) {
   }
 
   if (listeners.fn) {
-    if (listeners.fn !== fn || listeners.context != context) {
+    if (listeners.fn !== fn || listeners.context !== context) {
       const listener = { fn, context, once, removed: false };
 
       _events.set(event, [listeners, listener]);
@@ -72,7 +130,11 @@ function _newEL(_events, event, fn, context, once) {
 export class EventLite {
   constructor() {
     /** @type {Map<string, EventListener | EventListener[]>} */
-    this._events = new Map();
+    try {
+      this._events = Object.create ? new FastMap() : new Map();
+    } catch {
+      this._events = new FastMap();
+    }
   }
 
   /**
