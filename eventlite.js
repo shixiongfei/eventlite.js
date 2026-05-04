@@ -63,17 +63,21 @@ class FastMap {
   }
 
   *keys() {
-    for (const key in this._map) {
-      if (this._map[key]) {
+    const map = this._map;
+
+    for (const key in map) {
+      if (map[key]) {
         yield key;
       }
     }
   }
 
   *values() {
-    for (const key in this._map) {
-      if (this._map[key]) {
-        yield this._map[key];
+    const map = this._map;
+
+    for (const key in map) {
+      if (map[key]) {
+        yield map[key];
       }
     }
   }
