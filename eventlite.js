@@ -9,11 +9,6 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
-/**
- * @typedef {(...args: any[]) => void} Listener
- * @typedef {{fn: Listener, context: any, once: boolean, removed: boolean}} EventListener
- */
-
 function _Map() {}
 
 if (Object.create) {
@@ -24,10 +19,6 @@ class FastMap {
   constructor() {
     this._map = new _Map();
     this._count = 0;
-  }
-
-  get isFastMap() {
-    return true;
   }
 
   clear() {
@@ -83,6 +74,11 @@ class FastMap {
     }
   }
 }
+
+/**
+ * @typedef {(...args: any[]) => void} Listener
+ * @typedef {{fn: Listener, context: any, once: boolean, removed: boolean}} EventListener
+ */
 
 /**
  * @param {Map<string, EventListener | EventListener[]>} _events
