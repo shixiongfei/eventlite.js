@@ -255,6 +255,8 @@ describe("EventLite Unit Test", () => {
     counter.emit("sub", 5);
     counter.emit("sub");
 
+    unsubscribe();
+
     assert.deepStrictEqual(output, [
       [1, 1],
       [10, 11],
@@ -262,5 +264,6 @@ describe("EventLite Unit Test", () => {
       [-1, 5],
     ]);
     assert.strictEqual(counter.count, 5);
+    assert.deepStrictEqual(counter.eventNames(), ["add", "sub"]);
   });
 });
