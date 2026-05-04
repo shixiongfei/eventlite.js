@@ -23,6 +23,7 @@ if (Object.create) {
 class FastMap {
   constructor() {
     this._map = new _Map();
+    this._count = 0;
   }
 
   get isFastMap() {
@@ -31,6 +32,7 @@ class FastMap {
 
   clear() {
     this._map = new _Map();
+    this._count = 0;
   }
 
   /** @param {string} key */
@@ -48,6 +50,10 @@ class FastMap {
    * @param {*} value
    */
   set(key, value) {
+    if (!this._map[key]) {
+      this._count++;
+    }
+
     this._map[key] = value;
     return this;
   }
@@ -56,6 +62,11 @@ class FastMap {
   delete(key) {
     if (!this._map[key]) {
       return false;
+    }
+
+    if (--this._count === 0) {
+      this._map = new _Map();
+      return true;
     }
 
     this._map[key] = undefined;
@@ -68,16 +79,6 @@ class FastMap {
     for (const key in map) {
       if (map[key]) {
         yield key;
-      }
-    }
-  }
-
-  *values() {
-    const map = this._map;
-
-    for (const key in map) {
-      if (map[key]) {
-        yield map[key];
       }
     }
   }
