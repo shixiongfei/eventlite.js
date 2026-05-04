@@ -45,7 +45,7 @@ class FastMap {
 
   /**
    * @param {string} key
-   * @param {*) value
+   * @param {*} value
    */
   set(key, value) {
     this._map[key] = value;
@@ -136,10 +136,11 @@ function _newEL(_events, event, fn, context, once) {
  */
 export class EventLite {
   constructor() {
-    /** @type {Map<string, EventListener | EventListener[]>} */
     try {
+      /** @type {Map<string, EventListener | EventListener[]>} */
       this._events = Object.create ? new FastMap() : new Map();
     } catch {
+      /** @type {Map<string, EventListener | EventListener[]>} */
       this._events = new FastMap();
     }
   }
