@@ -304,7 +304,7 @@ export class EventLite {
 
     if (listeners.fn) {
       if (listeners.once) {
-        this.removeListener(event, listeners.fn, listeners.context);
+        _delEL(this, event, undefined, undefined, listeners.id);
       }
 
       switch (len) {
@@ -343,7 +343,7 @@ export class EventLite {
 
     for (let i = 0; i < listeners.length; i++) {
       if (listeners[i].once) {
-        this.removeListener(event, listeners[i].fn, listeners[i].context);
+        _delEL(this, event, undefined, undefined, listeners[i].id);
       }
 
       switch (len) {
