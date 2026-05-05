@@ -24,6 +24,7 @@ describe("EventLite Unit Test", () => {
 
     el.addListener("foo", emitted);
     el.addListener("foo", emitted);
+    el.addListener("foo", emitted, undefined, true);
     el.emit("foo", "bar");
 
     assert.strictEqual(el.listeners("foo").length, 1);
