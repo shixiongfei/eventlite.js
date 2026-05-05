@@ -440,4 +440,150 @@ describe("EventLite Unit Test", () => {
     assert.strictEqual(counter.count, 5);
     assert.deepStrictEqual(counter.eventNames(), ["add", "sub"]);
   });
+
+  test("remove by id on single listener", () => {
+    const el = eventlite();
+
+    const off = el.on("a", () => {});
+    off();
+
+    assert.strictEqual(el.listeners("a").length, 0);
+  });
+
+  test("remove by id does not affect other duplicates", () => {
+    const el = eventlite({ allowDuplicate: true });
+
+    const fn = () => {};
+
+    const off1 = el.on("a", fn);
+    const off2 = el.on("a", fn);
+
+    off1();
+
+    assert.strictEqual(el.listeners("a").length, 1);
+  });
+
+  test("array to single downgrade correctness", () => {
+    const el = eventlite();
+
+    const fn1 = () => {};
+    const fn2 = () => {};
+
+    el.on("a", fn1);
+    el.on("a", fn2);
+
+    el.off("a", fn1);
+
+    assert.strictEqual(el.listeners("a").length, 1);
+    assert.strictEqual(el.listeners("a")[0], fn2);
+  });
+
+  test("listener order preserved on upgrade to array", () => {
+    const el = eventlite();
+
+    const calls = [];
+
+    const a = () => calls.push("a");
+    const b = () => calls.push("b");
+
+    el.on("x", a);
+    el.on("x", b);
+
+    el.emit("x");
+
+    assert.deepStrictEqual(calls, ["a", "b"]);
+  });
+
+  test("eventNames after partial removal", () => {
+    const el = eventlite();
+
+    el.on("a", () => {});
+    el.on("b", () => {});
+
+    assert.deepStrictEqual(el.eventNames(), ["a", "b"]);
+
+    el.off("a");
+
+    assert.deepStrictEqual(el.eventNames(), ["b"]);
+  });
+
+  test("once removed before emit", () => {
+    const el = eventlite();
+
+    let called = false;
+
+    const off = el.once("a", () => {
+      called = true;
+    });
+
+    off();
+    el.emit("a");
+
+    assert.strictEqual(called, false);
+  });
+
+  test("remove non-existing listener", () => {
+    const el = eventlite();
+
+    const fn = () => {};
+    const fn2 = () => {};
+
+    el.on("a", fn);
+    el.off("a", fn2);
+
+    assert.strictEqual(el.listeners("a").length, 1);
+  });
+
+  test("remove non-existing listener in array", () => {
+    const el = eventlite();
+
+    const fn1 = () => {};
+    const fn2 = () => {};
+    const fn3 = () => {};
+
+    el.on("a", fn1);
+    el.on("a", fn2);
+
+    el.off("a", fn3);
+
+    assert.strictEqual(el.listeners("a").length, 2);
+  });
+
+  test("same fn different context should be treated as different listener", () => {
+    const el = eventlite();
+
+    const fn = function () {};
+
+    const ctx1 = {};
+    const ctx2 = {};
+
+    el.on("a", fn, ctx1);
+    el.on("a", fn, ctx2);
+
+    assert.strictEqual(el.listeners("a").length, 2);
+  });
+
+  test("emit after removeAllListeners", () => {
+    const el = eventlite();
+
+    let called = false;
+
+    el.on("a", () => (called = true));
+    el.removeAllListeners();
+
+    el.emit("a");
+
+    assert.strictEqual(called, false);
+  });
+
+  test("remove function idempotent", () => {
+    const el = eventlite();
+
+    const off = el.on("a", () => {});
+
+    off();
+    off();
+
+    assert.strictEqual(el.listeners("a").length, 0);
+  });
 });
