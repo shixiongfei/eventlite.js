@@ -229,7 +229,7 @@ function _delEL(el, event, fn, context, id) {
  */
 export class EventLite {
   /**
-   * @param {EventLiteOptions} [options]
+   * @param {EventLiteOptions} [options = {}]
    */
   constructor(options = {}) {
     /** @type {EventLiteOptions} */
