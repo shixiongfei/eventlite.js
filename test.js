@@ -135,6 +135,24 @@ describe("EventLite Unit Test", () => {
     assert.strictEqual(el.listeners("foo").length, 0);
   });
 
+  test("once", () => {
+    const output = [];
+    const el = eventlite();
+
+    const emitted = (text) => {
+      el.once("foo", emitted);
+      output.push(text);
+    };
+
+    el.once("foo", emitted);
+
+    el.emit("foo", "bar");
+    el.emit("foo", "baz");
+    el.emit("foo", "foobar");
+
+    assert.deepStrictEqual(output, ["bar", "baz", "foobar"]);
+  });
+
   test("context", () => {
     const context = { count: 0 };
     const el = eventlite();
