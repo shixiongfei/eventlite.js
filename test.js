@@ -586,4 +586,18 @@ describe("EventLite Unit Test", () => {
 
     assert.strictEqual(el.listeners("a").length, 0);
   });
+
+  test("once remove", () => {
+    const el = eventlite({ allowDuplicate: true });
+
+    const fn = () => {};
+
+    el.once("foo", fn);
+    el.on("foo", fn);
+
+    el.emit("foo");
+    el.emit("foo");
+
+    assert.strictEqual(el.listeners("foo").length, 1);
+  });
 });
