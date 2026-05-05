@@ -196,11 +196,6 @@ function _delEL(el, event, fn, context, id) {
     return false;
   }
 
-  if (listeners.length === 1) {
-    el._elevts.delete(event);
-    return true;
-  }
-
   if (listeners.length === 2) {
     if (listeners[0].removed) {
       el._elevts.set(event, listeners[1]);
