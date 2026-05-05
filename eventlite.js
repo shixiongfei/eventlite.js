@@ -11,46 +11,38 @@
 
 function _Map() {}
 
-if (Object.create) {
-  _Map.prototype = Object.create(null);
-}
+function _FastMap() {
+  this._map = new _Map();
+  this._count = 0;
 
-class FastMap {
-  constructor() {
+  /** @type {() => void} */
+  this.clear = () => {
     this._map = new _Map();
     this._count = 0;
-  }
+  };
 
-  clear() {
-    this._map = new _Map();
-    this._count = 0;
-  }
-
-  /** @param {string} key */
-  has(key) {
+  /** @type {(key: string) => boolean} */
+  this.has = (key) => {
     return this._map[key] !== undefined;
-  }
+  };
 
-  /** @param {string} key */
-  get(key) {
+  /** @type {(key: string) => any} */
+  this.get = (key) => {
     return this._map[key];
-  }
+  };
 
-  /**
-   * @param {string} key
-   * @param {*} value
-   */
-  set(key, value) {
+  /** @type {(key: string, value: any) => this} */
+  this.set = (key, value) => {
     if (!this._map[key]) {
       this._count++;
     }
 
     this._map[key] = value;
     return this;
-  }
+  };
 
-  /** @param {string} key */
-  delete(key) {
+  /** @type {(key: string) => boolean} */
+  this.delete = (key) => {
     if (!this._map[key]) {
       return false;
     }
@@ -62,9 +54,10 @@ class FastMap {
 
     this._map[key] = undefined;
     return true;
-  }
+  };
 
-  *keys() {
+  /** @type {() => MapIterator<string>} */
+  this.keys = function* () {
     const map = this._map;
 
     for (const key in map) {
@@ -72,7 +65,12 @@ class FastMap {
         yield key;
       }
     }
-  }
+  };
+}
+
+if (Object.create) {
+  _Map.prototype = Object.create(null);
+  _FastMap.prototype = Object.create(null);
 }
 
 /** @type {() => number} */
@@ -232,10 +230,10 @@ export class EventLite {
 
     try {
       /** @type {Map<string, EventListener | EventListener[]>} */
-      this._elevts = Object.create ? new FastMap() : new Map();
+      this._elevts = Object.create ? new _FastMap() : new Map();
     } catch {
       /** @type {Map<string, EventListener | EventListener[]>} */
-      this._elevts = new FastMap();
+      this._elevts = new _FastMap();
     }
   }
 
