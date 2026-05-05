@@ -14,7 +14,7 @@ import { describe, test } from "node:test";
 import EventLite, { eventlite } from "./eventlite.js";
 
 describe("EventLite Unit Test", () => {
-  test("not repeated listeners", () => {
+  test("no duplicate listeners", () => {
     const output = [];
     const el = eventlite();
 
@@ -82,10 +82,17 @@ describe("EventLite Unit Test", () => {
     };
 
     el.on("foo", emitted2);
-    el.emit("foo", "bar");
-    el.emit("foo", "baz");
-    el.emit("foo", "foobar");
 
+    el.emit("foo", "bar");
+    assert.deepStrictEqual(el.listeners("foo"), [emitted2, emitted1]);
+    assert.deepStrictEqual(output, ["bar"]);
+
+    el.emit("foo", "baz");
+    assert.deepStrictEqual(el.listeners("foo"), [emitted2]);
+    assert.deepStrictEqual(output, ["bar", "baz", "baz"]);
+
+    el.emit("foo", "foobar");
+    assert.deepStrictEqual(el.listeners("foo"), [emitted2, emitted1]);
     assert.deepStrictEqual(output, ["bar", "baz", "baz", "foobar"]);
   });
 
