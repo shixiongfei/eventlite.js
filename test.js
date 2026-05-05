@@ -11,6 +11,7 @@
 
 import assert from "node:assert";
 import { describe, test } from "node:test";
+import EventEmitter from "node:events";
 import EventLite, { eventlite } from "./eventlite.js";
 
 describe("EventLite Unit Test", () => {
@@ -29,6 +30,25 @@ describe("EventLite Unit Test", () => {
 
     assert.strictEqual(el.listeners("foo").length, 1);
     assert.deepStrictEqual(output, ["bar"]);
+  });
+
+  test("duplicate listeners", () => {
+    const output = [];
+    const el = eventlite({ allowDuplicate: true });
+
+    const emitted = (text) => {
+      output.push(text);
+    };
+
+    el.addListener("foo", emitted);
+    el.addListener("foo", emitted);
+    el.addListener("foo", emitted, undefined, true);
+
+    el.emit("foo", "bar");
+    el.emit("foo", "baz");
+
+    assert.strictEqual(el.listeners("foo").length, 2);
+    assert.deepStrictEqual(output, ["bar", "bar", "bar", "baz", "baz"]);
   });
 
   test("add and remove", () => {
@@ -69,6 +89,80 @@ describe("EventLite Unit Test", () => {
     assert.deepStrictEqual(el.eventNames(), []);
   });
 
+  test("duplicate add and remove", () => {
+    const ee_output = [];
+    const el_output = [];
+
+    const ee = new EventEmitter();
+    const el = eventlite({ allowDuplicate: true });
+
+    const ee_emitted = (text) => {
+      ee_output.push(text);
+    };
+
+    const el_emitted = (text) => {
+      el_output.push(text);
+    };
+
+    ee.once("foo", ee_emitted);
+    ee.on("foo", ee_emitted);
+
+    el.once("foo", el_emitted);
+    el.on("foo", el_emitted);
+
+    assert.deepStrictEqual(ee.listeners("foo"), [ee_emitted, ee_emitted]);
+    assert.deepStrictEqual(el.listeners("foo"), [el_emitted, el_emitted]);
+
+    ee.removeListener("foo", ee_emitted);
+    el.removeListener("foo", el_emitted);
+
+    ee.emit("foo", "bar");
+    ee.emit("foo", "bar");
+
+    el.emit("foo", "bar");
+    el.emit("foo", "bar");
+
+    assert.deepStrictEqual(ee_output, ["bar"]);
+    assert.deepStrictEqual(el_output, ["bar"]);
+
+    ee_output.splice(0, ee_output.length);
+    el_output.splice(0, el_output.length);
+
+    const ee_cb1 = (output) => {
+      ee_output.push("A");
+      ee.off("event", ee_cb2);
+    };
+
+    const ee_cb2 = (output) => {
+      ee_output.push("B");
+    };
+
+    ee.on("event", ee_cb1);
+    ee.on("event", ee_cb2);
+
+    ee.emit("event");
+    ee.emit("event");
+
+    assert.deepStrictEqual(ee_output, ["A", "B", "A"]);
+
+    const el_cb1 = (output) => {
+      el_output.push("A");
+      el.off("event", el_cb2);
+    };
+
+    const el_cb2 = (output) => {
+      el_output.push("B");
+    };
+
+    el.on("event", el_cb1);
+    el.on("event", el_cb2);
+
+    el.emit("event");
+    el.emit("event");
+
+    assert.deepStrictEqual(el_output, ["A", "B", "A"]);
+  });
+
   test("stable iteration 1", () => {
     const output = [];
     const el = eventlite();
@@ -98,6 +192,59 @@ describe("EventLite Unit Test", () => {
   });
 
   test("stable iteration 2", () => {
+    const ee_output = [];
+    const el_output = [];
+
+    const ee = new EventEmitter();
+    const el = eventlite({ allowDuplicate: true });
+
+    const ee_emitted1 = (text) => {
+      ee_output.push(text);
+    };
+
+    const ee_emitted2 = (text) => {
+      ee.once("foo", ee_emitted1);
+      ee_output.push(text);
+    };
+
+    const el_emitted1 = (text) => {
+      el_output.push(text);
+    };
+
+    const el_emitted2 = (text) => {
+      el.once("foo", el_emitted1);
+      el_output.push(text);
+    };
+
+    ee.on("foo", ee_emitted2);
+    el.on("foo", el_emitted2);
+
+    ee.emit("foo", "bar");
+    assert.deepStrictEqual(ee.listeners("foo"), [ee_emitted2, ee_emitted1]);
+    assert.deepStrictEqual(ee_output, ["bar"]);
+
+    el.emit("foo", "bar");
+    assert.deepStrictEqual(el.listeners("foo"), [el_emitted2, el_emitted1]);
+    assert.deepStrictEqual(el_output, ["bar"]);
+
+    ee.emit("foo", "baz");
+    assert.deepStrictEqual(ee.listeners("foo"), [ee_emitted2, ee_emitted1]);
+    assert.deepStrictEqual(ee_output, ["bar", "baz", "baz"]);
+
+    el.emit("foo", "baz");
+    assert.deepStrictEqual(el.listeners("foo"), [el_emitted2, el_emitted1]);
+    assert.deepStrictEqual(el_output, ["bar", "baz", "baz"]);
+
+    ee.emit("foo", "zoo");
+    assert.deepStrictEqual(ee.listeners("foo"), [ee_emitted2, ee_emitted1]);
+    assert.deepStrictEqual(ee_output, ["bar", "baz", "baz", "zoo", "zoo"]);
+
+    el.emit("foo", "zoo");
+    assert.deepStrictEqual(el.listeners("foo"), [el_emitted2, el_emitted1]);
+    assert.deepStrictEqual(el_output, ["bar", "baz", "baz", "zoo", "zoo"]);
+  });
+
+  test("stable iteration 3", () => {
     const output = [];
     const el = eventlite();
 
@@ -127,9 +274,10 @@ describe("EventLite Unit Test", () => {
     const removes = [
       el.on("foo", console.log),
       el.once("foo", (...args) => console.log(...args)),
+      el.on("foo", (...args) => console.log(...args)),
     ];
 
-    assert.strictEqual(el.listeners("foo").length, 2);
+    assert.strictEqual(el.listeners("foo").length, 3);
 
     removes.forEach((remove) => remove());
 

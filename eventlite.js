@@ -232,6 +232,7 @@ export class EventLite {
    * @param {EventLiteOptions} [options]
    */
   constructor(options = {}) {
+    /** @type {EventLiteOptions} */
     this._elopts = options;
 
     try {
