@@ -10,10 +10,11 @@
  */
 
 export declare type Listener = (...args: any[]) => void;
+export declare type EventLiteOptions = { allowDuplicate?: boolean };
 
 /** A very simple and fast event emittera */
 export declare class EventLite {
-  constructor();
+  constructor(options?: EventLiteOptions);
 
   /** Add an event listener */
   addListener(event: string, fn: Listener, context?: any, once?: boolean): this;
@@ -44,6 +45,6 @@ export declare class EventLite {
 }
 
 /** Create a new EventLite object */
-export declare function eventlite(): EventLite;
+export declare function eventlite(options?: EventLiteOptions): EventLite;
 
 export default EventLite;

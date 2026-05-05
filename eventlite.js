@@ -75,51 +75,69 @@ class FastMap {
   }
 }
 
+/** @type {() => number} */
+const ELID = (() => {
+  let count = 0;
+
+  const Id = (function* () {
+    for (;;) yield count++;
+  })();
+
+  return () => Id.next().value;
+})();
+
 /**
  * @typedef {(...args: any[]) => void} Listener
- * @typedef {{fn: Listener, context: any, once: boolean, removed: boolean}} EventListener
+ * @typedef {{id: number, fn: Listener, context: any, once: boolean, removed: boolean}} EventListener
+ * @typedef {{allowDuplicate?: boolean}} EventLiteOptions
  */
 
 /**
- * @param {Map<string, EventListener | EventListener[]>} _events
+ * @param {EventLite} el
  * @param {string} event
  * @param {Listener} fn
  * @param {*} context
  * @param {boolean} once
  * @returns {EventListener | undefined}
  */
-function _newEL(_events, event, fn, context, once) {
+function _newEL(el, event, fn, context, once) {
   if (typeof fn !== "function") {
     throw new TypeError("The listener must be a function");
   }
 
-  const listeners = _events.get(event);
+  const listeners = el._elevts.get(event);
 
   if (!listeners) {
-    const listener = { fn, context, once, removed: false };
+    const listener = { id: ELID(), fn, context, once, removed: false };
 
-    _events.set(event, listener);
+    el._elevts.set(event, listener);
     return listener;
   }
 
   if (listeners.fn) {
-    if (listeners.fn !== fn || listeners.context !== context) {
-      const listener = { fn, context, once, removed: false };
+    if (
+      el._elopts.allowDuplicate ||
+      listeners.fn !== fn ||
+      listeners.context !== context
+    ) {
+      const listener = { id: ELID(), fn, context, once, removed: false };
 
-      _events.set(event, [listeners, listener]);
+      el._elevts.set(event, [listeners, listener]);
       return listener;
     }
 
     return undefined;
   }
 
-  for (let i = 0; i < listeners.length; i++) {
-    if (listeners[i].fn === fn && listeners[i].context === context) {
-      return undefined;
+  if (!el._elopts.allowDuplicate) {
+    for (let i = 0; i < listeners.length; i++) {
+      if (listeners[i].fn === fn && listeners[i].context === context) {
+        return undefined;
+      }
     }
   }
 
-  const listener = { fn, context, once, removed: false };
+  const listener = { id: ELID(), fn, context, once, removed: false };
   const events = new Array(listeners.length + 1);
 
   for (let i = 0; i < listeners.length; i++) {
@@ -127,22 +145,101 @@ function _newEL(_events, event, fn, context, once) {
   }
 
   events[listeners.length] = listener;
-  _events.set(event, events);
+  el._elevts.set(event, events);
 
   return listener;
+}
+
+/**
+ * @param {EventLite} el
+ * @param {string} event
+ * @param {Listener} [fn]
+ * @param {*} [context]
+ * @param {number} [id]
+ * @returns {boolean}
+ */
+function _delEL(el, event, fn, context, id) {
+  const listeners = el._elevts.get(event);
+
+  if (!listeners) {
+    return false;
+  }
+
+  if (listeners.fn) {
+    if (
+      listeners.id === id ||
+      (listeners.fn === fn && listeners.context === context)
+    ) {
+      listeners.removed = true;
+      el._elevts.delete(event);
+
+      return true;
+    }
+
+    return false;
+  }
+
+  let removed = false;
+
+  for (let i = listeners.length - 1; i >= 0; i--) {
+    if (
+      listeners[i].id === id ||
+      (listeners[i].fn === fn && listeners[i].context === context)
+    ) {
+      listeners[i].removed = true;
+      removed = true;
+      break;
+    }
+  }
+
+  if (!removed) {
+    return false;
+  }
+
+  if (listeners.length === 1) {
+    el._elevts.delete(event);
+    return true;
+  }
+
+  if (listeners.length === 2) {
+    if (listeners[0].removed) {
+      el._elevts.set(event, listeners[1]);
+    } else {
+      el._elevts.set(event, listeners[0]);
+    }
+
+    return true;
+  }
+
+  const events = new Array(listeners.length - 1);
+
+  for (let i = 0, j = 0; i < listeners.length; i++) {
+    if (!listeners[i].removed) {
+      events[j++] = listeners[i];
+    }
+  }
+
+  el._elevts.set(event, events);
+
+  return true;
 }
 
 /**
  * A very simple and fast event emitter
  */
 export class EventLite {
-  constructor() {
+  /**
+   * @param {EventLiteOptions} [options]
+   */
+  constructor(options = {}) {
+    this._elopts = options;
+
     try {
       /** @type {Map<string, EventListener | EventListener[]>} */
-      this._events = Object.create ? new FastMap() : new Map();
+      this._elevts = Object.create ? new FastMap() : new Map();
     } catch {
       /** @type {Map<string, EventListener | EventListener[]>} */
-      this._events = new FastMap();
+      this._elevts = new FastMap();
     }
   }
 
@@ -155,7 +252,7 @@ export class EventLite {
    * @returns {this}
    */
   addListener(event, fn, context, once = false) {
-    _newEL(this._events, event, fn, context || this, once);
+    _newEL(this, event, fn, context || this, once);
     return this;
   }
 
@@ -167,46 +264,7 @@ export class EventLite {
    * @returns {this}
    */
   removeListener(event, fn, context) {
-    const listeners = this._events.get(event);
-
-    if (!listeners) {
-      return this;
-    }
-
-    context = context || this;
-
-    if (listeners.fn) {
-      if (listeners.fn === fn && listeners.context === context) {
-        listeners.removed = true;
-        this._events.delete(event);
-      }
-      return this;
-    }
-
-    let count = 0;
-    const events = new Array(listeners.length);
-
-    for (let i = 0; i < listeners.length; i++) {
-      if (listeners[i].fn !== fn || listeners[i].context !== context) {
-        events[count++] = listeners[i];
-      } else {
-        listeners[i].removed = true;
-      }
-    }
-
-    if (count === 0) {
-      this._events.delete(event);
-      return this;
-    }
-
-    if (count === 1) {
-      this._events.set(event, events[0]);
-      return this;
-    }
-
-    events.length = count;
-    this._events.set(event, events);
-
+    _delEL(this, event, fn, context || this);
     return this;
   }
 
@@ -217,12 +275,12 @@ export class EventLite {
    */
   removeAllListeners(event) {
     if (!event) {
-      this._events.clear();
+      this._elevts.clear();
       return this;
     }
 
-    if (this._events.has(event)) {
-      this._events.delete(event);
+    if (this._elevts.has(event)) {
+      this._elevts.delete(event);
     }
 
     return this;
@@ -235,7 +293,7 @@ export class EventLite {
    * @return {this}
    */
   emit(event, a, b, c, d, e) {
-    const listeners = this._events.get(event);
+    const listeners = this._elevts.get(event);
 
     if (!listeners) {
       return this;
@@ -331,11 +389,11 @@ export class EventLite {
    * @returns {() => void} - Remove function
    */
   on(event, fn, context) {
-    const el = _newEL(this._events, event, fn, context || this, false);
+    const el = _newEL(this, event, fn, context || this, false);
 
     return () => {
       if (el && !el.removed) {
-        this.removeListener(event, el.fn, el.context);
+        _delEL(this, event, undefined, undefined, el.id);
       }
     };
   }
@@ -348,11 +406,11 @@ export class EventLite {
    * @returns {() => void} - Remove function
    */
   once(event, fn, context) {
-    const el = _newEL(this._events, event, fn, context || this, true);
+    const el = _newEL(this, event, fn, context || this, true);
 
     return () => {
       if (el && !el.removed) {
-        this.removeListener(event, el.fn, el.context);
+        _delEL(this, event, undefined, undefined, el.id);
       }
     };
   }
@@ -375,7 +433,7 @@ export class EventLite {
    * @returns {string[]}
    */
   eventNames() {
-    return Array.from(this._events.keys());
+    return Array.from(this._elevts.keys());
   }
 
   /**
@@ -384,7 +442,7 @@ export class EventLite {
    * @returns {Listener[]}
    */
   listeners(event) {
-    const events = this._events.get(event);
+    const events = this._elevts.get(event);
 
     if (!events) {
       return [];
@@ -406,8 +464,9 @@ export class EventLite {
 
 /**
  * Create a new EventLite object
+ * @param {EventLiteOptions} [options]
  * @returns {EventLite}
  */
-export const eventlite = () => new EventLite();
+export const eventlite = (options) => new EventLite(options);
 
 export default EventLite;
