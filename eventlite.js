@@ -70,7 +70,6 @@ function _FastMap() {
 
 if (Object.create) {
   _Map.prototype = Object.create(null);
-  _FastMap.prototype = Object.create(null);
 }
 
 /** @type {() => number} */
@@ -127,8 +126,10 @@ function _newEL(el, event, fn, context, once) {
     return undefined;
   }
 
+  const length = listeners.length;
+
   if (!el._elopts.allowDuplicate) {
-    for (let i = 0; i < listeners.length; i++) {
+    for (let i = 0; i < length; i++) {
       if (listeners[i].fn === fn && listeners[i].context === context) {
         return undefined;
       }
@@ -136,13 +137,13 @@ function _newEL(el, event, fn, context, once) {
   }
 
   const listener = { id: ELID(), fn, context, once, removed: false };
-  const events = new Array(listeners.length + 1);
+  const events = new Array(length + 1);
 
-  for (let i = 0; i < listeners.length; i++) {
+  for (let i = 0; i < length; i++) {
     events[i] = listeners[i];
   }
 
-  events[listeners.length] = listener;
+  events[length] = listener;
   el._elevts.set(event, events);
 
   return listener;
@@ -178,13 +179,16 @@ function _delEL(el, event, fn, context, id) {
   }
 
   let removed = false;
+  const length = listeners.length;
 
-  for (let i = listeners.length - 1; i >= 0; i--) {
+  for (let i = length - 1; i >= 0; i--) {
+    const listener = listeners[i];
+
     if (
-      listeners[i].id === id ||
-      (listeners[i].fn === fn && listeners[i].context === context)
+      listener.id === id ||
+      (listener.fn === fn && listener.context === context)
     ) {
-      listeners[i].removed = true;
+      listener.removed = true;
       removed = true;
       break;
     }
@@ -194,7 +198,7 @@ function _delEL(el, event, fn, context, id) {
     return false;
   }
 
-  if (listeners.length === 2) {
+  if (length === 2) {
     if (listeners[0].removed) {
       el._elevts.set(event, listeners[1]);
     } else {
@@ -204,9 +208,9 @@ function _delEL(el, event, fn, context, id) {
     return true;
   }
 
-  const events = new Array(listeners.length - 1);
+  const events = new Array(length - 1);
 
-  for (let i = 0, j = 0; i < listeners.length; i++) {
+  for (let i = 0, j = 0; i < length; i++) {
     if (!listeners[i].removed) {
       events[j++] = listeners[i];
     }
@@ -333,30 +337,33 @@ export class EventLite {
     }
 
     let args;
+    const length = listeners.length;
 
-    for (let i = 0; i < listeners.length; i++) {
-      if (listeners[i].once) {
-        _delEL(this, event, undefined, undefined, listeners[i].id);
+    for (let i = 0; i < length; i++) {
+      const listener = listeners[i];
+
+      if (listener.once) {
+        _delEL(this, event, undefined, undefined, listener.id);
       }
 
       switch (len) {
         case 1:
-          listeners[i].fn.call(listeners[i].context);
+          listener.fn.call(listener.context);
           break;
         case 2:
-          listeners[i].fn.call(listeners[i].context, a);
+          listener.fn.call(listener.context, a);
           break;
         case 3:
-          listeners[i].fn.call(listeners[i].context, a, b);
+          listener.fn.call(listener.context, a, b);
           break;
         case 4:
-          listeners[i].fn.call(listeners[i].context, a, b, c);
+          listener.fn.call(listener.context, a, b, c);
           break;
         case 5:
-          listeners[i].fn.call(listeners[i].context, a, b, c, d);
+          listener.fn.call(listener.context, a, b, c, d);
           break;
         case 6:
-          listeners[i].fn.call(listeners[i].context, a, b, c, d, e);
+          listener.fn.call(listener.context, a, b, c, d, e);
           break;
         default: {
           if (!args) {
@@ -367,7 +374,7 @@ export class EventLite {
             }
           }
 
-          listeners[i].fn.apply(listeners[i].context, args);
+          listener.fn.apply(listener.context, args);
         }
       }
     }
@@ -446,9 +453,10 @@ export class EventLite {
       return [events.fn];
     }
 
-    const listeners = new Array(events.length);
+    const length = events.length;
+    const listeners = new Array(length);
 
-    for (let i = 0; i < events.length; i++) {
+    for (let i = 0; i < length; i++) {
       listeners[i] = events[i].fn;
     }
 
