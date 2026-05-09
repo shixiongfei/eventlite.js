@@ -9,7 +9,8 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
-export declare type Listener = (...args: any[]) => void;
+export declare type ListenerFn = (...args: any[]) => void;
+export declare type EventName = string | symbol;
 export declare type EventLiteOptions = { allowDuplicate?: boolean };
 
 /** A very simple and fast event emittera */
@@ -17,31 +18,31 @@ export declare class EventLite {
   constructor(options?: EventLiteOptions);
 
   /** Add an event listener */
-  addListener(event: string, fn: Listener, context?: any, once?: boolean): this;
+  addListener(event: EventName, fn: ListenerFn, context?: any, once?: boolean): this;
 
   /** Remove an event listener */
-  removeListener(event: string, fn: Listener, context?: any): this;
+  removeListener(event: EventName, fn: ListenerFn, context?: any): this;
 
   /** Remove all event listeners */
-  removeAllListeners(event?: string): this;
+  removeAllListeners(event?: EventName): this;
 
   /** Emit an event */
-  emit(event: string, ...args: any[]): this;
+  emit(event: EventName, ...args: any[]): this;
 
   /** Add an event listener */
-  on(event: string, fn: Listener, context?: any): () => void;
+  on(event: EventName, fn: ListenerFn, context?: any): () => void;
 
   /** Add an event listener and just emit once */
-  once(event: string, fn: Listener, context?: any): () => void;
+  once(event: EventName, fn: ListenerFn, context?: any): () => void;
 
   /** Remove an event listener or remove all event listeners */
-  off(event: string, fn?: Listener, context?: any): this;
+  off(event: EventName, fn?: ListenerFn, context?: any): this;
 
   /** Get all event names */
-  eventNames(): string[];
+  eventNames(): EventName[];
 
   /** Get all listeners by event name */
-  listeners(event: string): Listener[];
+  listeners(event: EventName): ListenerFn[];
 }
 
 /** Create a new EventLite object */

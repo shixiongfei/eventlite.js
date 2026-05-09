@@ -21,17 +21,17 @@ function _FastMap() {
     this._count = 0;
   };
 
-  /** @type {(key: string) => boolean} */
+  /** @type {(key: string | symbol) => boolean} */
   this.has = (key) => {
     return this._map[key] !== undefined;
   };
 
-  /** @type {(key: string) => any} */
+  /** @type {(key: string | symbol) => any} */
   this.get = (key) => {
     return this._map[key];
   };
 
-  /** @type {(key: string, value: any) => this} */
+  /** @type {(key: string | symbol, value: any) => this} */
   this.set = (key, value) => {
     if (!this._map[key]) {
       this._count++;
@@ -41,7 +41,7 @@ function _FastMap() {
     return this;
   };
 
-  /** @type {(key: string) => boolean} */
+  /** @type {(key: string | symbol) => boolean} */
   this.delete = (key) => {
     if (!this._map[key]) {
       return false;
@@ -56,7 +56,7 @@ function _FastMap() {
     return true;
   };
 
-  /** @type {() => MapIterator<string>} */
+  /** @type {() => MapIterator<string | symbol>} */
   this.keys = function* () {
     const map = this._map;
 
@@ -84,17 +84,16 @@ const ELID = (() => {
 })();
 
 /**
- * @typedef {(...args: any[]) => void} Listener
- * @typedef {{id: number, fn: Listener, context: any, once: boolean, removed: boolean}} EventListener
- * @typedef {{allowDuplicate?: boolean}} EventLiteOptions
+ * @import { ListenerFn, EventName, EventLiteOptions } from "./eventlite.d.ts"
+ * @typedef {{id: number, fn: ListenerFn, context: any, once: boolean, removed: boolean}} EventListener
  */
 
 /**
- * @param {EventLite} el
- * @param {string} event
- * @param {Listener} fn
- * @param {*} context
- * @param {boolean} once
+ * @param {EventLite} el - EventLite
+ * @param {EventName} event - Event name
+ * @param {ListenerFn} fn - Listener function
+ * @param {*} context - Context
+ * @param {boolean} once - Once listener
  * @returns {EventListener | undefined}
  */
 function _newEL(el, event, fn, context, once) {
@@ -150,11 +149,11 @@ function _newEL(el, event, fn, context, once) {
 }
 
 /**
- * @param {EventLite} el
- * @param {string} event
- * @param {Listener} [fn]
- * @param {*} [context]
- * @param {number} [id]
+ * @param {EventLite} el - EventLite
+ * @param {EventName} event - Event name
+ * @param {ListenerFn} [fn] - Listener function
+ * @param {*} [context] - Context
+ * @param {number} [id] - Event id
  * @returns {boolean}
  */
 function _delEL(el, event, fn, context, id) {
@@ -243,8 +242,8 @@ export class EventLite {
 
   /**
    * Add an event listener
-   * @param {string} event - Event name
-   * @param {Listener} fn - Listener
+   * @param {EventName} event - Event name
+   * @param {ListenerFn} fn - Listener function
    * @param {*} [context] - Context
    * @param {boolean} [once = false] - Once listener
    * @returns {this}
@@ -256,8 +255,8 @@ export class EventLite {
 
   /**
    * Remove an event listener
-   * @param {string} event - Event name
-   * @param {Listener} fn - Listener
+   * @param {EventName} event - Event name
+   * @param {ListenerFn} fn - Listener function
    * @param {*} [context] - Context
    * @returns {this}
    */
@@ -268,7 +267,7 @@ export class EventLite {
 
   /**
    * Remove all event listeners
-   * @param {string} [event] - Event name
+   * @param {EventName} [event] - Event name
    * @returns {this}
    */
   removeAllListeners(event) {
@@ -286,7 +285,7 @@ export class EventLite {
 
   /**
    * Emit an event
-   * @param {string} event - Event name
+   * @param {EventName} event - Event name
    * @param  {...any} args - Arguments
    * @return {this}
    */
@@ -384,8 +383,8 @@ export class EventLite {
 
   /**
    * Add an event listener
-   * @param {string} event - Event name
-   * @param {Listener} fn - Listener
+   * @param {EventName} event - Event name
+   * @param {ListenerFn} fn - Listener function
    * @param {*} [context] - Context
    * @returns {() => void} - Remove function
    */
@@ -401,8 +400,8 @@ export class EventLite {
 
   /**
    * Add an event listener and just emit once
-   * @param {string} event - Event name
-   * @param {Listener} fn - Listener
+   * @param {EventName} event - Event name
+   * @param {ListenerFn} fn - Listener function
    * @param {*} [context] - Context
    * @returns {() => void} - Remove function
    */
@@ -418,8 +417,8 @@ export class EventLite {
 
   /**
    * Remove an event listener or remove all event listeners
-   * @param {string} event - Event name
-   * @param {Listener} [fn] - Listener
+   * @param {EventName} event - Event name
+   * @param {ListenerFn} [fn] - Listener function
    * @param {*} [context] - Context
    * @returns {this}
    */
@@ -431,7 +430,7 @@ export class EventLite {
 
   /**
    * Get all event names
-   * @returns {string[]}
+   * @returns {EventName[]}
    */
   eventNames() {
     return Array.from(this._elevts.keys());
@@ -439,8 +438,8 @@ export class EventLite {
 
   /**
    * Get all listeners by event name
-   * @param {string} event - Event name
-   * @returns {Listener[]}
+   * @param {EventName} event - Event name
+   * @returns {ListenerFn[]}
    */
   listeners(event) {
     const events = this._elevts.get(event);

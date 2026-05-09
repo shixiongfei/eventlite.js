@@ -600,4 +600,21 @@ describe("EventLite Unit Test", () => {
 
     assert.strictEqual(el.listeners("foo").length, 1);
   });
+
+  test("symbol event", () => {
+    const output = [];
+    const el = eventlite();
+    const event = Symbol("foo");
+
+    const emitted = (text) => {
+      output.push(text);
+    };
+
+    el.on(event, emitted);
+    el.emit(event, "bar");
+    el.emit("foo", "foobar");
+    el.emit(Symbol("foo"), "foobar");
+
+    assert.deepStrictEqual(output, ["bar"]);
+  });
 });
