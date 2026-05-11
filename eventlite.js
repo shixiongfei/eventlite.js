@@ -477,11 +477,7 @@ export class EventLite {
     }
 
     if (!fn) {
-      if (events.fn) {
-        return 1;
-      }
-
-      return events.length;
+      return events.fn ? 1 : events.length;
     }
 
     context = context || this;
