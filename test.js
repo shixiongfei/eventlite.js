@@ -354,6 +354,12 @@ describe("EventLite Unit Test", () => {
     el.emit("sub");
 
     assert.strictEqual(context.count, 5);
+    assert.strictEqual(el.listenerCount("add"), 1);
+    assert.strictEqual(el.listenerCount("add", add), 0);
+    assert.strictEqual(el.listenerCount("add", add, context), 1);
+    assert.strictEqual(el.listenerCount("sub"), 1);
+    assert.strictEqual(el.listenerCount("sub", sub), 0);
+    assert.strictEqual(el.listenerCount("sub", sub, context), 1);
   });
 
   test("emit", () => {
