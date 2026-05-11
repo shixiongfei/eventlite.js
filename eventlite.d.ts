@@ -43,6 +43,9 @@ export declare class EventLite {
 
   /** Get all listeners by event name */
   listeners(event: EventName): ListenerFn[];
+
+  /** Get the number of listeners by event name */
+  listenerCount(event: EventName, fn?: ListenerFn, context?: any): number;
 }
 
 /** Create a new EventLite object */

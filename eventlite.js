@@ -461,6 +461,46 @@ export class EventLite {
 
     return listeners;
   }
+
+  /**
+   * Get the number of listeners by event name
+   * @param {EventName} event - Event name
+   * @param {ListenerFn} [fn] - Listener function
+   * @param {*} [context] - Context
+   * @returns {number}
+   */
+  listenerCount(event, fn, context) {
+    const events = this._elevts.get(event);
+
+    if (!events) {
+      return 0;
+    }
+
+    if (!fn) {
+      if (events.fn) {
+        return 1;
+      }
+
+      return events.length;
+    }
+
+    context = context || this;
+
+    if (events.fn) {
+      return events.fn === fn && events.context === context ? 1 : 0;
+    }
+
+    let count = 0;
+    const length = events.length;
+
+    for (let i = 0; i < length; i++) {
+      if (events[i].fn === fn && events[i].context === context) {
+        count++;
+      }
+    }
+
+    return count;
+  }
 }
 
 /**
