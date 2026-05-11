@@ -29,6 +29,8 @@ describe("EventLite Unit Test", () => {
     el.emit("foo", "bar");
 
     assert.strictEqual(el.listeners("foo").length, 1);
+    assert.strictEqual(el.listenerCount("foo"), 1);
+    assert.strictEqual(el.listenerCount("foo", emitted), 1);
     assert.deepStrictEqual(output, ["bar"]);
   });
 
@@ -48,6 +50,8 @@ describe("EventLite Unit Test", () => {
     el.emit("foo", "baz");
 
     assert.strictEqual(el.listeners("foo").length, 2);
+    assert.strictEqual(el.listenerCount("foo"), 2);
+    assert.strictEqual(el.listenerCount("foo", emitted), 2);
     assert.deepStrictEqual(output, ["bar", "bar", "bar", "baz", "baz"]);
   });
 
@@ -58,33 +62,43 @@ describe("EventLite Unit Test", () => {
 
     el.addListener("foo", () => {});
     assert.strictEqual(el.listeners("foo").length, 1);
+    assert.strictEqual(el.listenerCount("foo"), 1);
 
     el.addListener("foo", emitted);
     assert.strictEqual(el.listeners("foo").length, 2);
+    assert.strictEqual(el.listenerCount("foo"), 2);
 
     el.addListener("foo", () => {});
     assert.strictEqual(el.listeners("foo").length, 3);
+    assert.strictEqual(el.listenerCount("foo"), 3);
 
     el.removeListener("foo", emitted);
     assert.strictEqual(el.listeners("foo").length, 2);
+    assert.strictEqual(el.listenerCount("foo"), 2);
 
     el.removeAllListeners("foo");
     assert.strictEqual(el.listeners("foo").length, 0);
+    assert.strictEqual(el.listenerCount("foo"), 0);
 
     el.addListener("foo", emitted);
     assert.strictEqual(el.listeners("foo").length, 1);
+    assert.strictEqual(el.listenerCount("foo"), 1);
 
     el.removeListener("foo", emitted);
     assert.strictEqual(el.listeners("foo").length, 0);
+    assert.strictEqual(el.listenerCount("foo"), 0);
 
     el.addListener("bar", () => {});
     assert.strictEqual(el.listeners("bar").length, 1);
+    assert.strictEqual(el.listenerCount("bar"), 1);
 
     el.addListener("bar", emitted);
     assert.strictEqual(el.listeners("bar").length, 2);
+    assert.strictEqual(el.listenerCount("bar"), 2);
 
     el.removeAllListeners();
     assert.strictEqual(el.listeners("bar").length, 0);
+    assert.strictEqual(el.listenerCount("bar"), 0);
 
     assert.deepStrictEqual(el.eventNames(), []);
   });
@@ -111,7 +125,11 @@ describe("EventLite Unit Test", () => {
     el.on("foo", el_emitted);
 
     assert.deepStrictEqual(ee.listeners("foo"), [ee_emitted, ee_emitted]);
+    assert.strictEqual(ee.listenerCount("foo"), 2);
+    assert.strictEqual(ee.listenerCount("foo", ee_emitted), 2);
     assert.deepStrictEqual(el.listeners("foo"), [el_emitted, el_emitted]);
+    assert.strictEqual(el.listenerCount("foo"), 2);
+    assert.strictEqual(el.listenerCount("foo", el_emitted), 2);
 
     ee.removeListener("foo", ee_emitted);
     el.removeListener("foo", el_emitted);
@@ -180,14 +198,24 @@ describe("EventLite Unit Test", () => {
 
     el.emit("foo", "bar");
     assert.deepStrictEqual(el.listeners("foo"), [emitted2, emitted1]);
+    assert.strictEqual(el.listenerCount("foo"), 2);
+    assert.strictEqual(el.listenerCount("foo", emitted1), 1);
+    assert.strictEqual(el.listenerCount("foo", emitted2), 1);
+
     assert.deepStrictEqual(output, ["bar"]);
 
     el.emit("foo", "baz");
     assert.deepStrictEqual(el.listeners("foo"), [emitted2]);
+    assert.strictEqual(el.listenerCount("foo"), 1);
+    assert.strictEqual(el.listenerCount("foo", emitted1), 0);
+    assert.strictEqual(el.listenerCount("foo", emitted2), 1);
     assert.deepStrictEqual(output, ["bar", "baz", "baz"]);
 
     el.emit("foo", "foobar");
     assert.deepStrictEqual(el.listeners("foo"), [emitted2, emitted1]);
+    assert.strictEqual(el.listenerCount("foo"), 2);
+    assert.strictEqual(el.listenerCount("foo", emitted1), 1);
+    assert.strictEqual(el.listenerCount("foo", emitted2), 1);
     assert.deepStrictEqual(output, ["bar", "baz", "baz", "foobar"]);
   });
 
@@ -266,6 +294,7 @@ describe("EventLite Unit Test", () => {
 
     el.off("foo", emitted2);
     assert.strictEqual(el.listeners("foo").length, 0);
+    assert.strictEqual(el.listenerCount("foo"), 0);
   });
 
   test("remove function", () => {
@@ -278,10 +307,12 @@ describe("EventLite Unit Test", () => {
     ];
 
     assert.strictEqual(el.listeners("foo").length, 3);
+    assert.strictEqual(el.listenerCount("foo"), 3);
 
     removes.forEach((remove) => remove());
 
     assert.strictEqual(el.listeners("foo").length, 0);
+    assert.strictEqual(el.listenerCount("foo"), 0);
   });
 
   test("once", () => {
@@ -448,6 +479,7 @@ describe("EventLite Unit Test", () => {
     off();
 
     assert.strictEqual(el.listeners("a").length, 0);
+    assert.strictEqual(el.listenerCount("a"), 0);
   });
 
   test("remove by id does not affect other duplicates", () => {
@@ -461,6 +493,7 @@ describe("EventLite Unit Test", () => {
     off1();
 
     assert.strictEqual(el.listeners("a").length, 1);
+    assert.strictEqual(el.listenerCount("a"), 1);
   });
 
   test("array to single downgrade correctness", () => {
@@ -476,6 +509,7 @@ describe("EventLite Unit Test", () => {
 
     assert.strictEqual(el.listeners("a").length, 1);
     assert.strictEqual(el.listeners("a")[0], fn2);
+    assert.strictEqual(el.listenerCount("a"), 1);
   });
 
   test("listener order preserved on upgrade to array", () => {
@@ -532,6 +566,7 @@ describe("EventLite Unit Test", () => {
     el.off("a", fn2);
 
     assert.strictEqual(el.listeners("a").length, 1);
+    assert.strictEqual(el.listenerCount("a"), 1);
   });
 
   test("remove non-existing listener in array", () => {
@@ -547,6 +582,7 @@ describe("EventLite Unit Test", () => {
     el.off("a", fn3);
 
     assert.strictEqual(el.listeners("a").length, 2);
+    assert.strictEqual(el.listenerCount("a"), 2);
   });
 
   test("same fn different context should be treated as different listener", () => {
@@ -561,6 +597,7 @@ describe("EventLite Unit Test", () => {
     el.on("a", fn, ctx2);
 
     assert.strictEqual(el.listeners("a").length, 2);
+    assert.strictEqual(el.listenerCount("a"), 2);
   });
 
   test("emit after removeAllListeners", () => {
@@ -585,6 +622,7 @@ describe("EventLite Unit Test", () => {
     off();
 
     assert.strictEqual(el.listeners("a").length, 0);
+    assert.strictEqual(el.listenerCount("a"), 0);
   });
 
   test("once remove", () => {
@@ -599,6 +637,7 @@ describe("EventLite Unit Test", () => {
     el.emit("foo");
 
     assert.strictEqual(el.listeners("foo").length, 1);
+    assert.strictEqual(el.listenerCount("foo"), 1);
   });
 
   test("symbol event", () => {
