@@ -73,7 +73,7 @@ if (Object.create) {
 }
 
 /** @type {() => number} */
-const ELID = (() => {
+const _ELID = (() => {
   let count = 0;
 
   const Id = (function* () {
@@ -87,6 +87,16 @@ const ELID = (() => {
  * @import { ListenerFn, EventName, EventLiteOptions } from "./eventlite.d.ts"
  * @typedef {{id: number, fn: ListenerFn, context: any, once: boolean, removed: boolean}} EventListener
  */
+
+/**
+ * @param {ListenerFn} fn - Listener function
+ * @param {*} context - Context
+ * @param {boolean} once - Once listener
+ * @returns {EventListener}
+ */
+function _EL(fn, context, once) {
+  return { id: _ELID(), fn, context, once, removed: false };
+}
 
 /**
  * @param {EventLite} el - EventLite
@@ -104,7 +114,7 @@ function _newEL(el, event, fn, context, once) {
   const listeners = el._elevts.get(event);
 
   if (!listeners) {
-    const listener = { id: ELID(), fn, context, once, removed: false };
+    const listener = _EL(fn, context, once);
 
     el._elevts.set(event, listener);
     return listener;
@@ -116,7 +126,7 @@ function _newEL(el, event, fn, context, once) {
       listeners.fn !== fn ||
       listeners.context !== context
     ) {
-      const listener = { id: ELID(), fn, context, once, removed: false };
+      const listener = _EL(fn, context, once);
 
       el._elevts.set(event, [listeners, listener]);
       return listener;
@@ -135,16 +145,16 @@ function _newEL(el, event, fn, context, once) {
     }
   }
 
-  const listener = { id: ELID(), fn, context, once, removed: false };
   const events = new Array(length + 1);
 
   for (let i = 0; i < length; i++) {
     events[i] = listeners[i];
   }
 
+  const listener = _EL(fn, context, once);
   events[length] = listener;
-  el._elevts.set(event, events);
 
+  el._elevts.set(event, events);
   return listener;
 }
 
