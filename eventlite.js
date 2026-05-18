@@ -232,10 +232,10 @@ export class EventLite {
     this._elopts = options;
 
     try {
-      /** @type {Map<string, EventListener | EventListener[]>} */
+      /** @type {Map<EventName, EventListener | EventListener[]>} */
       this._elevts = Object.create ? new _FastMap() : new Map();
     } catch {
-      /** @type {Map<string, EventListener | EventListener[]>} */
+      /** @type {Map<EventName, EventListener | EventListener[]>} */
       this._elevts = new _FastMap();
     }
   }
