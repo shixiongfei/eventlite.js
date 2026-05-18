@@ -16,9 +16,13 @@ import EventLite, { eventlite } from "./eventlite.js";
 
 describe("EventLite Unit Test", () => {
   test("no duplicate listeners", () => {
+    /** @type {string[]} */
     const output = [];
+
+    /** @type {EventLite<{foo: (text: string) => void}>} */
     const el = eventlite();
 
+    /** @param {string} text */
     const emitted = (text) => {
       output.push(text);
     };
@@ -35,9 +39,13 @@ describe("EventLite Unit Test", () => {
   });
 
   test("duplicate listeners", () => {
+    /** @type {string[]} */
     const output = [];
+
+    /** @type {EventLite<{foo: [string]}>} */
     const el = eventlite({ allowDuplicate: true });
 
+    /** @param {string} text */
     const emitted = (text) => {
       output.push(text);
     };
@@ -56,6 +64,7 @@ describe("EventLite Unit Test", () => {
   });
 
   test("add and remove", () => {
+    /** @type {EventLite<{foo: [], bar: []}>} */
     const el = eventlite();
 
     const emitted = () => {};
@@ -104,16 +113,24 @@ describe("EventLite Unit Test", () => {
   });
 
   test("duplicate add and remove", () => {
+    /** @type {string[]} */
     const ee_output = [];
+
+    /** @type {string[]} */
     const el_output = [];
 
+    /** @type {EventEmitter<{foo: [string], event: []}>} */
     const ee = new EventEmitter();
+
+    /** @type {EventLite<{foo: [string], event: []}>} */
     const el = eventlite({ allowDuplicate: true });
 
+    /** @param {string} text */
     const ee_emitted = (text) => {
       ee_output.push(text);
     };
 
+    /** @param {string} text */
     const el_emitted = (text) => {
       el_output.push(text);
     };
@@ -146,12 +163,12 @@ describe("EventLite Unit Test", () => {
     ee_output.splice(0, ee_output.length);
     el_output.splice(0, el_output.length);
 
-    const ee_cb1 = (output) => {
+    const ee_cb1 = () => {
       ee_output.push("A");
       ee.off("event", ee_cb2);
     };
 
-    const ee_cb2 = (output) => {
+    const ee_cb2 = () => {
       ee_output.push("B");
     };
 
@@ -163,12 +180,12 @@ describe("EventLite Unit Test", () => {
 
     assert.deepStrictEqual(ee_output, ["A", "B", "A"]);
 
-    const el_cb1 = (output) => {
+    const el_cb1 = () => {
       el_output.push("A");
       el.off("event", el_cb2);
     };
 
-    const el_cb2 = (output) => {
+    const el_cb2 = () => {
       el_output.push("B");
     };
 
@@ -182,13 +199,16 @@ describe("EventLite Unit Test", () => {
   });
 
   test("stable iteration 1", () => {
+    /** @type {string[]} */
     const output = [];
     const el = eventlite();
 
+    /** @param {string} text */
     const emitted1 = (text) => {
       output.push(text);
     };
 
+    /** @param {string} text */
     const emitted2 = (text) => {
       el.once("foo", emitted1);
       output.push(text);
@@ -220,25 +240,32 @@ describe("EventLite Unit Test", () => {
   });
 
   test("stable iteration 2", () => {
+    /** @type {string[]} */
     const ee_output = [];
+
+    /** @type {string[]} */
     const el_output = [];
 
     const ee = new EventEmitter();
     const el = eventlite({ allowDuplicate: true });
 
+    /** @param {string} text */
     const ee_emitted1 = (text) => {
       ee_output.push(text);
     };
 
+    /** @param {string} text */
     const ee_emitted2 = (text) => {
       ee.once("foo", ee_emitted1);
       ee_output.push(text);
     };
 
+    /** @param {string} text */
     const el_emitted1 = (text) => {
       el_output.push(text);
     };
 
+    /** @param {string} text */
     const el_emitted2 = (text) => {
       el.once("foo", el_emitted1);
       el_output.push(text);
@@ -273,13 +300,16 @@ describe("EventLite Unit Test", () => {
   });
 
   test("stable iteration 3", () => {
+    /** @type {string[]} */
     const output = [];
     const el = eventlite();
 
+    /** @param {string} text */
     const emitted1 = (text) => {
       output.push(text);
     };
 
+    /** @param {string} text */
     const emitted2 = (text) => {
       el.removeListener("foo", emitted1);
       output.push(text);
@@ -316,9 +346,11 @@ describe("EventLite Unit Test", () => {
   });
 
   test("once", () => {
+    /** @type {string[]} */
     const output = [];
     const el = eventlite();
 
+    /** @param {string} text */
     const emitted = (text) => {
       el.once("foo", emitted);
       output.push(text);
@@ -363,9 +395,11 @@ describe("EventLite Unit Test", () => {
   });
 
   test("emit", () => {
+    /** @type {string[][]} */
     const output = [];
     const el = eventlite();
 
+    /** @param {string[]} args */
     const emitted = (...args) => {
       output.push(args);
     };
@@ -433,6 +467,7 @@ describe("EventLite Unit Test", () => {
   });
 
   test("class", () => {
+    /** @type {[number, number][]} */
     const output = [];
 
     class Counter extends EventLite {
@@ -521,6 +556,7 @@ describe("EventLite Unit Test", () => {
   test("listener order preserved on upgrade to array", () => {
     const el = eventlite();
 
+    /** @type {string[]} */
     const calls = [];
 
     const a = () => calls.push("a");
@@ -647,10 +683,15 @@ describe("EventLite Unit Test", () => {
   });
 
   test("symbol event", () => {
+    /** @type {string[]} */
     const output = [];
+
+    /** @type {EventLite<{[k: symbol]: [string], foo: [string]}>} */
     const el = eventlite();
+
     const event = Symbol("foo");
 
+    /** @param {string} text */
     const emitted = (text) => {
       output.push(text);
     };
