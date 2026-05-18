@@ -13,11 +13,13 @@ export declare type ListenerFn<T extends any[] = any[]> = (...args: T) => void;
 export declare type EventName = string | symbol;
 export declare type EventLiteOptions = { allowDuplicate?: boolean };
 
-export type EventTypes = EventName | object;
+export declare type EventTypes = EventName | object;
 
-export type EventKeys<T extends EventTypes> = T extends EventName ? T : keyof T;
+export declare type EventKeys<T extends EventTypes> = T extends EventName
+  ? T
+  : keyof T;
 
-export type EventArgs<
+export declare type EventArgs<
   T extends EventTypes,
   K extends EventKeys<T>,
 > = T extends EventName
