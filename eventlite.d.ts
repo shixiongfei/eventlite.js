@@ -9,46 +9,90 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
-export declare type ListenerFn = (...args: any[]) => void;
+export declare type ListenerFn<T extends any[] = any[]> = (...args: T) => void;
 export declare type EventName = string | symbol;
 export declare type EventLiteOptions = { allowDuplicate?: boolean };
 
+export type EventTypes = EventName | object;
+
+export type EventKeys<T extends EventTypes> = T extends EventName ? T : keyof T;
+
+export type EventArgs<
+  T extends EventTypes,
+  K extends EventKeys<T>,
+> = T extends EventName
+  ? any[]
+  : T[Extract<K, keyof T>] extends ListenerFn
+    ? Parameters<T[Extract<K, keyof T>]>
+    : T[Extract<K, keyof T>] extends any[]
+      ? T[Extract<K, keyof T>]
+      : any[];
+
 /** A very simple and fast event emittera */
-export declare class EventLite {
+export declare class EventLite<T extends EventTypes = EventName> {
   constructor(options?: EventLiteOptions);
 
   /** Add an event listener */
-  addListener(event: EventName, fn: ListenerFn, context?: any, once?: boolean): this;
+  addListener<K extends EventKeys<T>>(
+    event: K,
+    fn: ListenerFn<EventArgs<T, K>>,
+    context?: any,
+    once?: boolean,
+  ): this;
 
   /** Remove an event listener */
-  removeListener(event: EventName, fn: ListenerFn, context?: any): this;
+  removeListener<K extends EventKeys<T>>(
+    event: K,
+    fn: ListenerFn<EventArgs<T, K>>,
+    context?: any,
+  ): this;
 
   /** Remove all event listeners */
-  removeAllListeners(event?: EventName): this;
+  removeAllListeners<K extends EventKeys<T>>(event?: K): this;
 
   /** Emit an event */
-  emit(event: EventName, ...args: any[]): this;
+  emit<K extends EventKeys<T>>(event: K, ...args: EventArgs<T, K>): this;
 
   /** Add an event listener */
-  on(event: EventName, fn: ListenerFn, context?: any): () => void;
+  on<K extends EventKeys<T>>(
+    event: K,
+    fn: ListenerFn<EventArgs<T, K>>,
+    context?: any,
+  ): () => void;
 
   /** Add an event listener and just emit once */
-  once(event: EventName, fn: ListenerFn, context?: any): () => void;
+  once<K extends EventKeys<T>>(
+    event: K,
+    fn: ListenerFn<EventArgs<T, K>>,
+    context?: any,
+  ): () => void;
 
   /** Remove an event listener or remove all event listeners */
-  off(event: EventName, fn?: ListenerFn, context?: any): this;
+  off<K extends EventKeys<T>>(
+    event: K,
+    fn?: ListenerFn<EventArgs<T, K>>,
+    context?: any,
+  ): this;
 
   /** Get all event names */
-  eventNames(): EventName[];
+  eventNames(): Array<EventKeys<T>>;
 
   /** Get all listeners by event name */
-  listeners(event: EventName): ListenerFn[];
+  listeners<K extends EventKeys<T>>(
+    event: K,
+  ): Array<ListenerFn<EventArgs<T, K>>>;
 
   /** Get the number of listeners by event name */
-  listenerCount(event: EventName, fn?: ListenerFn, context?: any): number;
+  listenerCount<K extends EventKeys<T>>(
+    event: K,
+    fn?: ListenerFn<EventArgs<T, K>>,
+    context?: any,
+  ): number;
 }
 
 /** Create a new EventLite object */
-export declare function eventlite(options?: EventLiteOptions): EventLite;
+export declare function eventlite<T extends EventTypes = EventName>(
+  options?: EventLiteOptions,
+): EventLite<T>;
 
 export default EventLite;
