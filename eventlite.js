@@ -245,8 +245,7 @@ const _queueMicrotask = queueMicrotask
 const _isPromise = (value) =>
   value !== null &&
   (typeof value === "object" || typeof value === "function") &&
-  typeof value.then === "function" &&
-  typeof value.catch === "function";
+  typeof value.then === "function";
 
 /**
  * A very simple and fast event emitter
