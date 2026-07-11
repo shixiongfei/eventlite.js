@@ -232,7 +232,8 @@ function _delEL(el, event, fn, context, id) {
 
 const _queueMicrotask = queueMicrotask
   ? queueMicrotask
-  : (callback) => {
+  : /** @param {() => void} callback */
+    (callback) => {
       setTimeout(callback, 0);
     };
 
