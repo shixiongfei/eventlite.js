@@ -840,7 +840,9 @@ describe("EventLite Unit Test", () => {
     el.once("baz", asyncEmitted);
     el.on("baz", syncEmitted);
 
-    el.send("baz", "baz1");
+    el.send("baz", "baz1").then((result) => {
+      assert.strictEqual(result, true);
+    });
     el.emit("baz", "baz2");
 
     await delay(() => {}, 100);
@@ -852,5 +854,8 @@ describe("EventLite Unit Test", () => {
     ]);
 
     output.splice(0, output.length);
+
+    const retval = await el.send("hello", "world");
+    assert.strictEqual(retval, false);
   });
 });

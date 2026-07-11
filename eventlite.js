@@ -472,7 +472,7 @@ export class EventLite {
         let pcnt = 0;
 
         const length = listeners.length;
-        const retvals = new Array(length);
+        const promises = new Array(length);
 
         for (let i = 0; i < length; i++) {
           const listener = listeners[i];
@@ -514,7 +514,7 @@ export class EventLite {
           }
 
           if (_isPromise(retval)) {
-            retvals[pcnt++] = retval;
+            promises[pcnt++] = retval;
           }
         }
 
@@ -522,8 +522,8 @@ export class EventLite {
           return resolve(true);
         }
 
-        retvals.length = pcnt;
-        Promise.all(retvals).then(() => resolve(true));
+        promises.length = pcnt;
+        Promise.all(promises).then(() => resolve(true));
       }),
     );
   }
