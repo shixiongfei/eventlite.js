@@ -55,6 +55,12 @@ export declare class EventLite<T extends EventTypes = EventName> {
   /** Emit an event */
   emit<K extends EventKeys<T>>(event: K, ...args: EventArgs<T, K>): this;
 
+  /** Async send an event */
+  send<K extends EventKeys<T>>(
+    event: K,
+    ...args: EventArgs<T, K>
+  ): Promise<boolean>;
+
   /** Add an event listener */
   on<K extends EventKeys<T>>(
     event: K,

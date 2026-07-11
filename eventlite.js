@@ -230,6 +230,23 @@ function _delEL(el, event, fn, context, id) {
   return true;
 }
 
+const _queueMicrotask = queueMicrotask
+  ? queueMicrotask
+  : (callback) => {
+      setTimeout(callback, 0);
+    };
+
+/**
+ * @template T
+ * @param {T | Promise<T>} value
+ * @returns {value is Promise<T>}
+ */
+const _isPromise = (value) =>
+  value !== null &&
+  (typeof value === "object" || typeof value === "function") &&
+  typeof value.then === "function" &&
+  typeof value.catch === "function";
+
 /**
  * A very simple and fast event emitter
  */
@@ -389,6 +406,126 @@ export class EventLite {
     }
 
     return this;
+  }
+
+  /**
+   * Async send an event
+   * @param {EventName} event - Event name
+   * @param  {...any} args - Arguments
+   * @return {Promise<boolean>}
+   */
+  send(event, a, b, c, d, e) {
+    const _arguments = arguments;
+    return new Promise((resolve) =>
+      _queueMicrotask(() => {
+        const listeners = this._elevts.get(event);
+
+        if (!listeners) {
+          return resolve(false);
+        }
+
+        const len = _arguments.length;
+
+        if (listeners.fn) {
+          if (listeners.once) {
+            _delEL(this, event, undefined, undefined, listeners.id);
+          }
+
+          let retval;
+
+          switch (len) {
+            case 1:
+              retval = listeners.fn.call(listeners.context);
+              break;
+            case 2:
+              retval = listeners.fn.call(listeners.context, a);
+              break;
+            case 3:
+              retval = listeners.fn.call(listeners.context, a, b);
+              break;
+            case 4:
+              retval = listeners.fn.call(listeners.context, a, b, c);
+              break;
+            case 5:
+              retval = listeners.fn.call(listeners.context, a, b, c, d);
+              break;
+            case 6:
+              retval = listeners.fn.call(listeners.context, a, b, c, d, e);
+              break;
+            default: {
+              const args = new Array(len - 1);
+
+              for (let i = 1; i < len; i++) {
+                args[i - 1] = _arguments[i];
+              }
+
+              retval = listeners.fn.apply(listeners.context, args);
+            }
+          }
+
+          return _isPromise(retval)
+            ? retval.then(() => resolve(true))
+            : resolve(true);
+        }
+
+        let args, retval;
+        let pcnt = 0;
+
+        const length = listeners.length;
+        const retvals = new Array(length);
+
+        for (let i = 0; i < length; i++) {
+          const listener = listeners[i];
+
+          if (listener.once) {
+            _delEL(this, event, undefined, undefined, listener.id);
+          }
+
+          switch (len) {
+            case 1:
+              retval = listener.fn.call(listener.context);
+              break;
+            case 2:
+              retval = listener.fn.call(listener.context, a);
+              break;
+            case 3:
+              retval = listener.fn.call(listener.context, a, b);
+              break;
+            case 4:
+              retval = listener.fn.call(listener.context, a, b, c);
+              break;
+            case 5:
+              retval = listener.fn.call(listener.context, a, b, c, d);
+              break;
+            case 6:
+              retval = listener.fn.call(listener.context, a, b, c, d, e);
+              break;
+            default: {
+              if (!args) {
+                args = new Array(len - 1);
+
+                for (let j = 1; j < len; j++) {
+                  args[j - 1] = _arguments[j];
+                }
+              }
+
+              retval = listener.fn.apply(listener.context, args);
+            }
+          }
+
+          if (_isPromise(retval)) {
+            retvals[pcnt++] = retval;
+          }
+        }
+
+        if (pcnt === 0) {
+          return resolve(true);
+        }
+
+        retvals.length = pcnt;
+        Promise.all(retvals).then(() => resolve(true));
+      }),
+    );
   }
 
   /**
