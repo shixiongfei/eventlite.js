@@ -68,7 +68,7 @@ function _FastMap() {
   };
 }
 
-if (Object.create) {
+if (typeof Object.create === "function") {
   _Map.prototype = Object.create(null);
 }
 
@@ -230,12 +230,26 @@ function _delEL(el, event, fn, context, id) {
   return true;
 }
 
-const _queueMicrotask = queueMicrotask
-  ? queueMicrotask
-  : /** @param {() => void} callback */
-    (callback) => {
-      setTimeout(callback, 0);
-    };
+/** @returns {Map<EventName, EventListener | EventListener[]> */
+function _ELMap() {
+  if (typeof Object.create === "function") {
+    return new _FastMap();
+  }
+
+  try {
+    return new Map();
+  } catch {
+    return new _FastMap();
+  }
+}
+
+const _queueMicrotask =
+  typeof queueMicrotask === "function"
+    ? queueMicrotask
+    : /** @param {() => void} callback */
+      (callback) => {
+        setTimeout(callback, 0);
+      };
 
 /**
  * @template T
@@ -258,13 +272,8 @@ export class EventLite {
     /** @type {EventLiteOptions} */
     this._elopts = options;
 
-    try {
-      /** @type {Map<EventName, EventListener | EventListener[]>} */
-      this._elevts = Object.create ? new _FastMap() : new Map();
-    } catch {
-      /** @type {Map<EventName, EventListener | EventListener[]>} */
-      this._elevts = new _FastMap();
-    }
+    /** @type {Map<EventName, EventListener | EventListener[]>} */
+    this._elevts = _ELMap();
   }
 
   /**
