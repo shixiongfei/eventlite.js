@@ -14,6 +14,19 @@ import { describe, test } from "node:test";
 import EventEmitter from "node:events";
 import EventLite, { eventlite } from "./eventlite.js";
 
+/**
+ * @param {(...args) => void} callback
+ * @param {number} [timeout = 0]
+ * @param {any[]} args
+ */
+const delay = (callback, timeout = 0, ...args) =>
+  new Promise((resolve) => {
+    setTimeout(() => {
+      callback(...args);
+      resolve();
+    }, timeout);
+  });
+
 describe("EventLite Unit Test", () => {
   test("no duplicate listeners", () => {
     /** @type {string[]} */
@@ -702,5 +715,142 @@ describe("EventLite Unit Test", () => {
     el.emit(Symbol("foo"), "foobar");
 
     assert.deepStrictEqual(output, ["bar"]);
+  });
+
+  test("delay function", () => {
+    /** @type {string[]} */
+    const output = [];
+
+    /** @param {string} text */
+    const emitted = (text) => {
+      output.push(text);
+    };
+
+    delay(emitted, 100, "100");
+    delay(emitted, 50, "50");
+
+    delay(() => {
+      assert.deepStrictEqual(output, ["50", "100"]);
+    }, 100);
+  });
+
+  test("async send", async () => {
+    /** @type {["async" | "sync", string[]][]} */
+    const output = [];
+
+    /** @type {EventLite<{
+     *    foo: (...args: string[]) => void,
+     *    bar: (...args: string[]) => void,
+     *    foobar: (...args: string[]) => void,
+     *    baz: (...args: string[]) => void,
+     *  }>}
+     */
+    const el = eventlite();
+
+    const syncEmitted = (...args) => {
+      output.push(["sync", args]);
+    };
+
+    const asyncEmitted = async (...args) => {
+      await delay(() => {
+        output.push(["async", args]);
+      }, 100);
+    };
+
+    el.on("foo", syncEmitted);
+
+    await Promise.all([
+      el.send("foo"),
+      el.send("foo", "bar"),
+      el.send("foo", "bar", "baz"),
+      el.send("foo", "bar", "baz", "boom"),
+      el.send("foo", "bar", "baz", "boom", "hello"),
+      el.send("foo", "bar", "baz", "boom", "hello", "world"),
+      el.send("foo", "bar", "baz", "boom", "hello", "world", "!!!"),
+    ]);
+
+    assert.deepStrictEqual(output, [
+      ["sync", []],
+      ["sync", ["bar"]],
+      ["sync", ["bar", "baz"]],
+      ["sync", ["bar", "baz", "boom"]],
+      ["sync", ["bar", "baz", "boom", "hello"]],
+      ["sync", ["bar", "baz", "boom", "hello", "world"]],
+      ["sync", ["bar", "baz", "boom", "hello", "world", "!!!"]],
+    ]);
+
+    output.splice(0, output.length);
+
+    el.on("bar", asyncEmitted);
+
+    await Promise.all([
+      el.send("bar"),
+      el.send("bar", "bar"),
+      el.send("bar", "bar", "baz"),
+      el.send("bar", "bar", "baz", "boom"),
+      el.send("bar", "bar", "baz", "boom", "hello"),
+      el.send("bar", "bar", "baz", "boom", "hello", "world"),
+      el.send("bar", "bar", "baz", "boom", "hello", "world", "!!!"),
+    ]);
+
+    assert.deepStrictEqual(output, [
+      ["async", []],
+      ["async", ["bar"]],
+      ["async", ["bar", "baz"]],
+      ["async", ["bar", "baz", "boom"]],
+      ["async", ["bar", "baz", "boom", "hello"]],
+      ["async", ["bar", "baz", "boom", "hello", "world"]],
+      ["async", ["bar", "baz", "boom", "hello", "world", "!!!"]],
+    ]);
+
+    output.splice(0, output.length);
+
+    el.on("foobar", asyncEmitted);
+    el.on("foobar", syncEmitted);
+
+    await Promise.all([
+      el.send("foobar"),
+      el.send("foobar", "bar"),
+      el.send("foobar", "bar", "baz"),
+      el.send("foobar", "bar", "baz", "boom"),
+      el.send("foobar", "bar", "baz", "boom", "hello"),
+      el.send("foobar", "bar", "baz", "boom", "hello", "world"),
+      el.send("foobar", "bar", "baz", "boom", "hello", "world", "!!!"),
+    ]);
+
+    assert.deepStrictEqual(output, [
+      ["sync", []],
+      ["sync", ["bar"]],
+      ["sync", ["bar", "baz"]],
+      ["sync", ["bar", "baz", "boom"]],
+      ["sync", ["bar", "baz", "boom", "hello"]],
+      ["sync", ["bar", "baz", "boom", "hello", "world"]],
+      ["sync", ["bar", "baz", "boom", "hello", "world", "!!!"]],
+      ["async", []],
+      ["async", ["bar"]],
+      ["async", ["bar", "baz"]],
+      ["async", ["bar", "baz", "boom"]],
+      ["async", ["bar", "baz", "boom", "hello"]],
+      ["async", ["bar", "baz", "boom", "hello", "world"]],
+      ["async", ["bar", "baz", "boom", "hello", "world", "!!!"]],
+    ]);
+
+    output.splice(0, output.length);
+
+    el.once("baz", asyncEmitted);
+    el.on("baz", syncEmitted);
+
+    el.send("baz", "baz1");
+    el.emit("baz", "baz2");
+
+    await delay(() => {}, 100);
+
+    assert.deepStrictEqual(output, [
+      ["sync", ["baz2"]],
+      ["sync", ["baz1"]],
+      ["async", ["baz2"]],
+    ]);
+
+    output.splice(0, output.length);
   });
 });
