@@ -254,10 +254,6 @@ function _delEL(el, event, fn, context, id) {
 
 /** @type {() => Map<EventName, EventListener | EventListener[]>} */
 const _newELMap = (() => {
-  if (typeof Object.create === "function") {
-    return () => new _FastMap();
-  }
-
   if (typeof Map === "function") {
     return () => new Map();
   }
