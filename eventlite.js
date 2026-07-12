@@ -14,16 +14,18 @@ function _Map() {}
 function _FastMap() {
   this._map = new _Map();
   this._count = 0;
+  this._maxCount = 0;
 
   /** @type {() => void} */
   this.clear = () => {
     this._map = new _Map();
     this._count = 0;
+    this._maxCount = 0;
   };
 
   /** @type {(key: string | symbol) => boolean} */
   this.has = (key) => {
-    return this._map[key] !== undefined;
+    return !!this._map[key];
   };
 
   /** @type {(key: string | symbol) => any} */
@@ -35,6 +37,10 @@ function _FastMap() {
   this.set = (key, value) => {
     if (!this._map[key]) {
       this._count++;
+
+      if (this._map[key] === undefined) {
+        this._maxCount++;
+      }
     }
 
     this._map[key] = value;
@@ -49,10 +55,26 @@ function _FastMap() {
 
     if (--this._count === 0) {
       this._map = new _Map();
+      this._maxCount = 0;
       return true;
     }
 
-    this._map[key] = undefined;
+    this._map[key] = null;
+
+    if (this._count < this._maxCount - this._count) {
+      const map = this._map;
+      const copied = new _Map();
+
+      for (const key in map) {
+        if (map[key]) {
+          copied[key] = map[key];
+        }
+      }
+
+      this._map = copied;
+      this._maxCount = this._count;
+    }
+
     return true;
   };
 
