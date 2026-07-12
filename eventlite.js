@@ -252,25 +252,19 @@ function _delEL(el, event, fn, context, id) {
   return true;
 }
 
-/** @type {() => Map<EventName, EventListener | EventListener[]>} */
-const _newELMap = (() => {
-  if (typeof Map === "function") {
-    return () => new Map();
-  }
-
-  return () => new _FastMap();
-})();
+/**
+ * @template K, V
+ * @type {Map<K, V>}
+ */
+const _ELMap = typeof Map === "function" ? Map : _FastMap;
 
 /** @type {(callback: () => void) => void} */
-const _queueMicrotask = (() => {
-  if (typeof queueMicrotask === "function") {
-    return queueMicrotask;
-  }
-
-  return (callback) => {
-    Promise.resolve().then(callback);
-  };
-})();
+const _queueMicrotask =
+  typeof queueMicrotask === "function"
+    ? queueMicrotask
+    : (callback) => {
+        Promise.resolve().then(callback);
+      };
 
 /**
  * @template T
@@ -298,7 +292,7 @@ export class EventLite {
     this._elopts = options;
 
     /** @type {Map<EventName, EventListener | EventListener[]>} */
-    this._elevts = _newELMap();
+    this._elevts = new _ELMap();
   }
 
   /**
