@@ -439,112 +439,116 @@ export class EventLite {
     return new Promise((resolve, reject) => {
       try {
         _queueMicrotask(() => {
-          const listeners = this._elevts.get(event);
+          try {
+            const listeners = this._elevts.get(event);
 
-          if (!listeners) {
-            return resolve(false);
-          }
-
-          const len = _arguments.length;
-
-          if (listeners.fn) {
-            if (listeners.once) {
-              _delEL(this, event, undefined, undefined, listeners.id);
+            if (!listeners) {
+              return resolve(false);
             }
 
-            let retval;
+            const len = _arguments.length;
 
-            switch (len) {
-              case 1:
-                retval = listeners.fn.call(listeners.context);
-                break;
-              case 2:
-                retval = listeners.fn.call(listeners.context, a);
-                break;
-              case 3:
-                retval = listeners.fn.call(listeners.context, a, b);
-                break;
-              case 4:
-                retval = listeners.fn.call(listeners.context, a, b, c);
-                break;
-              case 5:
-                retval = listeners.fn.call(listeners.context, a, b, c, d);
-                break;
-              case 6:
-                retval = listeners.fn.call(listeners.context, a, b, c, d, e);
-                break;
-              default: {
-                const args = new Array(len - 1);
-
-                for (let i = 1; i < len; i++) {
-                  args[i - 1] = _arguments[i];
-                }
-
-                retval = listeners.fn.apply(listeners.context, args);
+            if (listeners.fn) {
+              if (listeners.once) {
+                _delEL(this, event, undefined, undefined, listeners.id);
               }
-            }
 
-            return _isPromise(retval)
-              ? retval.then(() => resolve(true))
-              : resolve(true);
-          }
+              let retval;
 
-          let args, retval;
-          let pcnt = 0;
+              switch (len) {
+                case 1:
+                  retval = listeners.fn.call(listeners.context);
+                  break;
+                case 2:
+                  retval = listeners.fn.call(listeners.context, a);
+                  break;
+                case 3:
+                  retval = listeners.fn.call(listeners.context, a, b);
+                  break;
+                case 4:
+                  retval = listeners.fn.call(listeners.context, a, b, c);
+                  break;
+                case 5:
+                  retval = listeners.fn.call(listeners.context, a, b, c, d);
+                  break;
+                case 6:
+                  retval = listeners.fn.call(listeners.context, a, b, c, d, e);
+                  break;
+                default: {
+                  const args = new Array(len - 1);
 
-          const length = listeners.length;
-          const promises = new Array(length);
-
-          for (let i = 0; i < length; i++) {
-            const listener = listeners[i];
-
-            if (listener.once) {
-              _delEL(this, event, undefined, undefined, listener.id);
-            }
-
-            switch (len) {
-              case 1:
-                retval = listener.fn.call(listener.context);
-                break;
-              case 2:
-                retval = listener.fn.call(listener.context, a);
-                break;
-              case 3:
-                retval = listener.fn.call(listener.context, a, b);
-                break;
-              case 4:
-                retval = listener.fn.call(listener.context, a, b, c);
-                break;
-              case 5:
-                retval = listener.fn.call(listener.context, a, b, c, d);
-                break;
-              case 6:
-                retval = listener.fn.call(listener.context, a, b, c, d, e);
-                break;
-              default: {
-                if (!args) {
-                  args = new Array(len - 1);
-
-                  for (let j = 1; j < len; j++) {
-                    args[j - 1] = _arguments[j];
+                  for (let i = 1; i < len; i++) {
+                    args[i - 1] = _arguments[i];
                   }
-                }
 
-                retval = listener.fn.apply(listener.context, args);
+                  retval = listeners.fn.apply(listeners.context, args);
+                }
+              }
+
+              return _isPromise(retval)
+                ? retval.then(() => resolve(true))
+                : resolve(true);
+            }
+
+            let args, retval;
+            let pcnt = 0;
+
+            const length = listeners.length;
+            const promises = new Array(length);
+
+            for (let i = 0; i < length; i++) {
+              const listener = listeners[i];
+
+              if (listener.once) {
+                _delEL(this, event, undefined, undefined, listener.id);
+              }
+
+              switch (len) {
+                case 1:
+                  retval = listener.fn.call(listener.context);
+                  break;
+                case 2:
+                  retval = listener.fn.call(listener.context, a);
+                  break;
+                case 3:
+                  retval = listener.fn.call(listener.context, a, b);
+                  break;
+                case 4:
+                  retval = listener.fn.call(listener.context, a, b, c);
+                  break;
+                case 5:
+                  retval = listener.fn.call(listener.context, a, b, c, d);
+                  break;
+                case 6:
+                  retval = listener.fn.call(listener.context, a, b, c, d, e);
+                  break;
+                default: {
+                  if (!args) {
+                    args = new Array(len - 1);
+
+                    for (let j = 1; j < len; j++) {
+                      args[j - 1] = _arguments[j];
+                    }
+                  }
+
+                  retval = listener.fn.apply(listener.context, args);
+                }
+              }
+
+              if (_isPromise(retval)) {
+                promises[pcnt++] = retval;
               }
             }
 
-            if (_isPromise(retval)) {
-              promises[pcnt++] = retval;
+            if (pcnt === 0) {
+              return resolve(true);
             }
-          }
 
-          if (pcnt === 0) {
-            return resolve(true);
+            promises.length = pcnt;
+            Promise.all(promises).then(() => resolve(true));
+          } catch (error) {
+            reject(error);
           }
-
-          promises.length = pcnt;
-          Promise.all(promises).then(() => resolve(true));
         });
       } catch (error) {
         reject(error);
