@@ -20,10 +20,13 @@ import EventLite, { eventlite } from "./eventlite.js";
  * @param {any[]} args
  */
 const delay = (callback, timeout = 0, ...args) =>
-  new Promise((resolve) => {
+  new Promise((resolve, reject) => {
     setTimeout(() => {
-      callback(...args);
-      resolve();
+      try {
+        resolve(callback(...args));
+      } catch (error) {
+        reject(error);
+      }
     }, timeout);
   });
 
@@ -738,12 +741,13 @@ describe("EventLite Unit Test", () => {
     /** @type {["async" | "sync", string[]][]} */
     const output = [];
 
-    /** @type {EventLite<{
+    /**
+     * @type {EventLite<{
      *    foo: (...args: string[]) => void,
      *    bar: (...args: string[]) => void,
      *    foobar: (...args: string[]) => void,
      *    baz: (...args: string[]) => void,
-     *  }>}
+     * }>}
      */
     const el = eventlite();
 
@@ -857,5 +861,55 @@ describe("EventLite Unit Test", () => {
 
     const retval = await el.send("hello", "world");
     assert.strictEqual(retval, false);
+  });
+
+  test("catch exception", async () => {
+    const el = eventlite();
+
+    el.on("foo", () => {
+      throw new Error("error!");
+    });
+
+    el.on("bar", () => {
+      return new Promise((_, reject) => {
+        delay(() => {
+          reject(new Error("promise error!"));
+        }, 100);
+      });
+    });
+
+    el.on("baz", async () => {
+      await delay(() => {
+        throw new Error("async error!");
+      }, 100);
+    });
+
+    try {
+      el.emit("foo");
+    } catch (error) {
+      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error.message, "error!");
+    }
+
+    try {
+      await el.send("foo");
+    } catch (error) {
+      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error.message, "error!");
+    }
+
+    try {
+      await el.send("bar");
+    } catch (error) {
+      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error.message, "promise error!");
+    }
+
+    try {
+      await el.send("baz");
+    } catch (error) {
+      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error.message, "async error!");
+    }
   });
 });
