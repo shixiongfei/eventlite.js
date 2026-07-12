@@ -9,11 +9,28 @@
  * https://github.com/shixiongfei/eventlite.js
  */
 
+/**
+ * @template {string | symbol} K
+ * @template V
+ * @constructor
+ * @property {V | null} [index: K]
+ * @this {{[key in K]: V | null}}
+ */
 function _Map() {}
 
+/**
+ * @template {string | symbol} K
+ * @template V
+ * @constructor
+ */
 function _FastMap() {
+  /** @type {_Map<K, V>} */
   this._map = new _Map();
+
+  /** @type {number} */
   this._count = 0;
+
+  /** @type {number} */
   this._maxCount = 0;
 
   /** @type {() => void} */
@@ -23,17 +40,17 @@ function _FastMap() {
     this._maxCount = 0;
   };
 
-  /** @type {(key: string | symbol) => boolean} */
+  /** @type {(key: K) => boolean} */
   this.has = (key) => {
     return !!this._map[key];
   };
 
-  /** @type {(key: string | symbol) => any} */
+  /** @type {(key: K) => V | null | undefined} */
   this.get = (key) => {
     return this._map[key];
   };
 
-  /** @type {(key: string | symbol, value: any) => this} */
+  /** @type {(key: K, value: V) => this} */
   this.set = (key, value) => {
     if (!this._map[key]) {
       this._count++;
@@ -47,7 +64,7 @@ function _FastMap() {
     return this;
   };
 
-  /** @type {(key: string | symbol) => boolean} */
+  /** @type {(key: K) => boolean} */
   this.delete = (key) => {
     if (!this._map[key]) {
       return false;
@@ -78,7 +95,7 @@ function _FastMap() {
     return true;
   };
 
-  /** @type {() => MapIterator<string | symbol>} */
+  /** @type {() => MapIterator<K>} */
   this.keys = function* () {
     const map = this._map;
 
@@ -252,10 +269,7 @@ function _delEL(el, event, fn, context, id) {
   return true;
 }
 
-/**
- * @template K, V
- * @type {Map<K, V>}
- */
+/** @type {typeof Map} */
 const _ELMap = typeof Map === "function" ? Map : _FastMap;
 
 /** @type {(callback: () => void) => void} */
