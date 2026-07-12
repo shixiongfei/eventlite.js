@@ -230,18 +230,20 @@ function _delEL(el, event, fn, context, id) {
   return true;
 }
 
-/** @returns {Map<EventName, EventListener | EventListener[]> */
-function _ELMap() {
+/** @type {() => Map<EventName, EventListener | EventListener[]>} */
+const _newELMap = (() => {
   if (typeof Object.create === "function") {
-    return new _FastMap();
+    return () => new _FastMap();
   }
 
-  try {
-    return new Map();
-  } catch {
-    return new _FastMap();
-  }
-}
+  return () => {
+    try {
+      return new Map();
+    } catch {
+      return new _FastMap();
+    }
+  };
+})();
 
 /** @type {(callback: () => void) => void} */
 const _queueMicrotask = (() => {
@@ -277,7 +279,7 @@ export class EventLite {
     this._elopts = options;
 
     /** @type {Map<EventName, EventListener | EventListener[]>} */
-    this._elevts = _ELMap();
+    this._elevts = _newELMap();
   }
 
   /**
