@@ -719,6 +719,7 @@ describe("EventLite Unit Test", () => {
     el.emit(Symbol("foo"), "foobar");
 
     assert.deepStrictEqual(output, ["bar"]);
+    assert.deepStrictEqual(el.eventNames(), [event]);
   });
 
   test("delay function", () => {

@@ -13,7 +13,6 @@
  * @template {string | symbol} K
  * @template V
  * @constructor
- * @property {V | null} [index: K]
  * @this {{[key in K]: V | null}}
  */
 function _Map() {}
@@ -80,9 +79,10 @@ function _FastMap() {
 
     if (this._count < this._maxCount - this._count) {
       const map = this._map;
+      const keys = Reflect.ownKeys(map);
       const copied = new _Map();
 
-      for (const key in map) {
+      for (const key of keys) {
         if (map[key]) {
           copied[key] = map[key];
         }
@@ -98,8 +98,9 @@ function _FastMap() {
   /** @type {() => MapIterator<K>} */
   this.keys = function* () {
     const map = this._map;
+    const keys = Reflect.ownKeys(map);
 
-    for (const key in map) {
+    for (const key of keys) {
       if (map[key]) {
         yield key;
       }
