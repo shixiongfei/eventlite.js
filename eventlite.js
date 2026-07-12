@@ -270,7 +270,8 @@ const _queueMicrotask = (() => {
 const _isPromise = (value) =>
   value !== null &&
   (typeof value === "object" || typeof value === "function") &&
-  typeof value.then === "function";
+  typeof value.then === "function" &&
+  typeof value.catch === "function";
 
 /**
  * A very simple and fast event emitter
@@ -486,7 +487,9 @@ export class EventLite {
               }
 
               return _isPromise(retval)
-                ? retval.then(() => resolve(true))
+                ? retval
+                    .then(() => resolve(true))
+                    .catch((error) => reject(error))
                 : resolve(true);
             }
 
@@ -545,7 +548,10 @@ export class EventLite {
             }
 
             promises.length = pcnt;
-            Promise.all(promises).then(() => resolve(true));
+
+            Promise.all(promises)
+              .then(() => resolve(true))
+              .catch((error) => reject(error));
           } catch (error) {
             reject(error);
           }
