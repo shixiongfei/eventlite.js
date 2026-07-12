@@ -249,12 +249,6 @@ const _queueMicrotask = (() => {
     return queueMicrotask;
   }
 
-  if (typeof setTimeout === "function") {
-    return (callback) => {
-      setTimeout(callback, 0);
-    };
-  }
-
   return (callback) => {
     Promise.resolve().then(callback);
   };
