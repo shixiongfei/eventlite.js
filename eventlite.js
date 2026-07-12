@@ -236,13 +236,11 @@ const _newELMap = (() => {
     return () => new _FastMap();
   }
 
-  return () => {
-    try {
-      return new Map();
-    } catch {
-      return new _FastMap();
-    }
-  };
+  if (typeof Map === "function") {
+    return () => new Map();
+  }
+
+  return () => new _FastMap();
 })();
 
 /** @type {(callback: () => void) => void} */
@@ -261,11 +259,14 @@ const _queueMicrotask = (() => {
  * @param {T | Promise<T>} value
  * @returns {value is Promise<T>}
  */
-const _isPromise = (value) =>
-  value !== null &&
-  (typeof value === "object" || typeof value === "function") &&
-  typeof value.then === "function" &&
-  typeof value.catch === "function";
+function _isPromise(value) {
+  return (
+    value !== null &&
+    (typeof value === "object" || typeof value === "function") &&
+    typeof value.then === "function" &&
+    typeof value.catch === "function"
+  );
+}
 
 /**
  * A very simple and fast event emitter
