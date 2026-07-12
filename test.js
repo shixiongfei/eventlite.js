@@ -15,9 +15,10 @@ import EventEmitter from "node:events";
 import EventLite, { eventlite } from "./eventlite.js";
 
 /**
- * @param {(...args) => void} callback
+ * @param {(...args: any[]) => any} callback
  * @param {number} [timeout = 0]
  * @param {any[]} args
+ * @returns {Promise<any>}
  */
 const delay = (callback, timeout = 0, ...args) =>
   new Promise((resolve, reject) => {
@@ -887,28 +888,28 @@ describe("EventLite Unit Test", () => {
     try {
       el.emit("foo");
     } catch (error) {
-      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error instanceof Error, true);
       assert.strictEqual(error.message, "error!");
     }
 
     try {
       await el.send("foo");
     } catch (error) {
-      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error instanceof Error, true);
       assert.strictEqual(error.message, "error!");
     }
 
     try {
       await el.send("bar");
     } catch (error) {
-      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error instanceof Error, true);
       assert.strictEqual(error.message, "promise error!");
     }
 
     try {
       await el.send("baz");
     } catch (error) {
-      assert.strictEqual(Error.isError(error), true);
+      assert.strictEqual(error instanceof Error, true);
       assert.strictEqual(error.message, "async error!");
     }
   });
