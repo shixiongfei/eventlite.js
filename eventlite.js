@@ -255,10 +255,8 @@ const _queueMicrotask = (() => {
     };
   }
 
-  return (_) => {
-    throw new Error(
-      "JavaScript runtime is missing necessary functions queueMicrotask or setTimeout",
-    );
+  return (callback) => {
+    Promise.resolve().then(callback);
   };
 })();
 
