@@ -31,6 +31,18 @@ const delay = (callback, timeout = 0, ...args) =>
     }, timeout);
   });
 
+/**
+ * @param {number} start
+ * @param {number} stop
+ * @param {number} step
+ * @returns {number[]}
+ */
+const range = (start, stop, step = 1) =>
+  Array.from(
+    { length: (stop - start) / step + 1 },
+    (_, index) => start + index * step,
+  );
+
 describe("EventLite Unit Test", () => {
   test("no duplicate listeners", () => {
     /** @type {string[]} */
@@ -914,4 +926,49 @@ describe("EventLite Unit Test", () => {
       assert.strictEqual(error.message, "async error!");
     }
   });
+
+  if (typeof Map === "function") {
+    test("FastMap", () => {
+      const el1 = eventlite();
+      const el2 = eventlite({ useFastMap: true });
+
+      for (const key of range(1, 10).map((n) => `test_${n}`)) {
+        el1.on(key, () => {});
+        el2.on(key, () => {});
+      }
+
+      assert.deepStrictEqual(el1.eventNames(), el2.eventNames());
+
+      const s1 = Symbol("sym1");
+      const s2 = Symbol("sym2");
+      const s3 = Symbol("sym3");
+
+      el1.on(s1, () => {});
+      el1.on(s2, () => {});
+      el1.on(s3, () => {});
+
+      el2.on(s1, () => {});
+      el2.on(s2, () => {});
+      el2.on(s3, () => {});
+
+      assert.deepStrictEqual(el1.eventNames(), el2.eventNames());
+
+      for (const key of range(2, 10, 2).map((n) => `test_${n}`)) {
+        el1.off(key);
+        el2.off(key);
+      }
+
+      assert.deepStrictEqual(el1.eventNames(), el2.eventNames());
+
+      el1.off(s1);
+      el2.off(s1);
+
+      assert.deepStrictEqual(el1.eventNames(), el2.eventNames());
+
+      el1.off(s3);
+      el2.off(s3);
+
+      assert.deepStrictEqual(el1.eventNames(), el2.eventNames());
+    });
+  }
 });
