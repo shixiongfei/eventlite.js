@@ -873,6 +873,21 @@ describe("EventLite Unit Test", () => {
 
     output.splice(0, output.length);
 
+    el.off("baz");
+    el.once("baz", asyncEmitted);
+    el.on("baz", syncEmitted);
+
+    await el.send("baz", "baz1");
+    el.emit("baz", "baz2");
+
+    assert.deepStrictEqual(output, [
+      ["sync", ["baz1"]],
+      ["async", ["baz1"]],
+      ["sync", ["baz2"]],
+    ]);
+
+    output.splice(0, output.length);
+
     const retval = await el.send("hello", "world");
     assert.strictEqual(retval, false);
   });
