@@ -932,6 +932,9 @@ describe("EventLite Unit Test", () => {
       const el1 = eventlite();
       const el2 = eventlite({ useFastMap: true });
 
+      assert.strictEqual(el1._elevts instanceof Map, true);
+      assert.strictEqual(el2._elevts instanceof Map, false);
+
       for (const key of range(1, 10).map((n) => `test_${n}`)) {
         el1.on(key, () => {});
         el2.on(key, () => {});
