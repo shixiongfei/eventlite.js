@@ -307,7 +307,7 @@ export class EventLite {
     this._elopts = options;
 
     /** @type {Map<EventName, EventListener | EventListener[]>} */
-    this._elevts = new _ELMap();
+    this._elevts = options.useFastMap ? new _FastMap() : new _ELMap();
   }
 
   /**

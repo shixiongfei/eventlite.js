@@ -11,7 +11,11 @@
 
 export declare type ListenerFn<T extends any[] = any[]> = (...args: T) => void;
 export declare type EventName = string | symbol;
-export declare type EventLiteOptions = { allowDuplicate?: boolean };
+
+export declare type EventLiteOptions = {
+  allowDuplicate?: boolean;
+  useFastMap?: boolean;
+};
 
 export declare type EventTypes = EventName | object;
 
