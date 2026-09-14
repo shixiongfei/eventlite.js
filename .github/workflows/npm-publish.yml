@@ -16,5 +16,4 @@ jobs:
         with:
           node-version: lts/*
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
       - run: npm publish
