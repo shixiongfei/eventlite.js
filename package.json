@@ -6,7 +6,8 @@
   "types": "./eventlite.d.ts",
   "type": "module",
   "scripts": {
-    "test": "node ./test.js"
+    "test": "node ./test.js",
+    "coverage": "node --test --experimental-test-coverage"
   },
   "homepage": "https://github.com/shixiongfei/eventlite.js#readme",
   "bugs": {
