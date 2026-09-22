@@ -989,4 +989,21 @@ describe("EventLite Unit Test", () => {
       assert.deepStrictEqual(el1.eventNames(), el2.eventNames());
     });
   }
+
+  test("send fan-out continues after sync throw", async () => {
+    const el = eventlite({ allowDuplicate: true });
+    const order = [];
+
+    el.on("z", () => {
+      order.push("a");
+      throw new Error("boom");
+    });
+
+    el.on("z", () => {
+      order.push("b");
+    });
+
+    await assert.rejects(el.send("z"), { message: "boom" });
+    assert.deepStrictEqual(order, ["a", "b"]);
+  });
 });

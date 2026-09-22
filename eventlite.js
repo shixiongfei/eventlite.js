@@ -478,34 +478,45 @@ export class EventLite {
 
               let retval;
 
-              switch (len) {
-                case 1:
-                  retval = listeners.fn.call(listeners.context);
-                  break;
-                case 2:
-                  retval = listeners.fn.call(listeners.context, a);
-                  break;
-                case 3:
-                  retval = listeners.fn.call(listeners.context, a, b);
-                  break;
-                case 4:
-                  retval = listeners.fn.call(listeners.context, a, b, c);
-                  break;
-                case 5:
-                  retval = listeners.fn.call(listeners.context, a, b, c, d);
-                  break;
-                case 6:
-                  retval = listeners.fn.call(listeners.context, a, b, c, d, e);
-                  break;
-                default: {
-                  const args = new Array(len - 1);
+              try {
+                switch (len) {
+                  case 1:
+                    retval = listeners.fn.call(listeners.context);
+                    break;
+                  case 2:
+                    retval = listeners.fn.call(listeners.context, a);
+                    break;
+                  case 3:
+                    retval = listeners.fn.call(listeners.context, a, b);
+                    break;
+                  case 4:
+                    retval = listeners.fn.call(listeners.context, a, b, c);
+                    break;
+                  case 5:
+                    retval = listeners.fn.call(listeners.context, a, b, c, d);
+                    break;
+                  case 6:
+                    retval = listeners.fn.call(
+                      listeners.context,
+                      a,
+                      b,
+                      c,
+                      d,
+                      e,
+                    );
+                    break;
+                  default: {
+                    const args = new Array(len - 1);
 
-                  for (let i = 1; i < len; i++) {
-                    args[i - 1] = _arguments[i];
+                    for (let i = 1; i < len; i++) {
+                      args[i - 1] = _arguments[i];
+                    }
+
+                    retval = listeners.fn.apply(listeners.context, args);
                   }
-
-                  retval = listeners.fn.apply(listeners.context, args);
                 }
+              } catch (error) {
+                retval = Promise.reject(error);
               }
 
               return _isPromise(retval)
@@ -528,36 +539,40 @@ export class EventLite {
                 _delEL(this, event, undefined, undefined, listener.id);
               }
 
-              switch (len) {
-                case 1:
-                  retval = listener.fn.call(listener.context);
-                  break;
-                case 2:
-                  retval = listener.fn.call(listener.context, a);
-                  break;
-                case 3:
-                  retval = listener.fn.call(listener.context, a, b);
-                  break;
-                case 4:
-                  retval = listener.fn.call(listener.context, a, b, c);
-                  break;
-                case 5:
-                  retval = listener.fn.call(listener.context, a, b, c, d);
-                  break;
-                case 6:
-                  retval = listener.fn.call(listener.context, a, b, c, d, e);
-                  break;
-                default: {
-                  if (!args) {
-                    args = new Array(len - 1);
+              try {
+                switch (len) {
+                  case 1:
+                    retval = listener.fn.call(listener.context);
+                    break;
+                  case 2:
+                    retval = listener.fn.call(listener.context, a);
+                    break;
+                  case 3:
+                    retval = listener.fn.call(listener.context, a, b);
+                    break;
+                  case 4:
+                    retval = listener.fn.call(listener.context, a, b, c);
+                    break;
+                  case 5:
+                    retval = listener.fn.call(listener.context, a, b, c, d);
+                    break;
+                  case 6:
+                    retval = listener.fn.call(listener.context, a, b, c, d, e);
+                    break;
+                  default: {
+                    if (!args) {
+                      args = new Array(len - 1);
 
-                    for (let j = 1; j < len; j++) {
-                      args[j - 1] = _arguments[j];
+                      for (let j = 1; j < len; j++) {
+                        args[j - 1] = _arguments[j];
+                      }
                     }
-                  }
 
-                  retval = listener.fn.apply(listener.context, args);
+                    retval = listener.fn.apply(listener.context, args);
+                  }
                 }
+              } catch (error) {
+                retval = Promise.reject(error);
               }
 
               if (_isPromise(retval)) {
