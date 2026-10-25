@@ -1006,4 +1006,91 @@ describe("EventLite Unit Test", () => {
     await assert.rejects(el.send("z"), { message: "boom" });
     assert.deepStrictEqual(order, ["a", "b"]);
   });
+
+  test("empty string event name", () => {
+    const el = eventlite();
+    const calls = [];
+
+    el.on("", (value) => calls.push(value));
+    el.on("foo", (value) => calls.push(value));
+    el.emit("", "empty");
+    el.emit("foo", "foo");
+
+    assert.deepStrictEqual(calls, ["empty", "foo"]);
+
+    el.removeAllListeners("");
+    assert.deepStrictEqual(el.eventNames(), ["foo"]);
+    assert.strictEqual(el.listenerCount(""), 0);
+
+    el.on("", () => calls.push("again"));
+    el.off("");
+    assert.deepStrictEqual(el.eventNames(), ["foo"]);
+
+    el.emit("foo", "foo2");
+    assert.deepStrictEqual(calls, ["empty", "foo", "foo2"]);
+  });
+
+  test("FastMap removeAllListeners and delete to zero", () => {
+    const el = eventlite({ useFastMap: true });
+    const calls = [];
+
+    el.on("foo", () => calls.push("foo"));
+    el.on("bar", () => calls.push("bar"));
+
+    el.removeAllListeners();
+    assert.deepStrictEqual(el.eventNames(), []);
+    assert.strictEqual(el.listenerCount("foo"), 0);
+
+    el.on("baz", () => calls.push("baz"));
+    el.off("baz");
+    assert.deepStrictEqual(el.eventNames(), []);
+    assert.strictEqual(el.listenerCount("baz"), 0);
+
+    el.on("qux", () => calls.push("qux"));
+    el.emit("qux");
+    assert.deepStrictEqual(calls, ["qux"]);
+  });
+
+  test("send single once listener", async () => {
+    const el = eventlite();
+    let count = 0;
+
+    el.once("foo", () => count++);
+
+    assert.strictEqual(await el.send("foo"), true);
+    assert.strictEqual(count, 1);
+    assert.strictEqual(el.listenerCount("foo"), 0);
+    assert.strictEqual(await el.send("foo"), false);
+  });
+
+  test("send multiple synchronous listeners", async () => {
+    const el = eventlite();
+    const order = [];
+
+    el.on("foo", () => order.push("a"));
+    el.on("foo", () => order.push("b"));
+
+    assert.strictEqual(await el.send("foo"), true);
+    assert.deepStrictEqual(order, ["a", "b"]);
+  });
+
+  test("options snapshot at construction", () => {
+    const options = { allowDuplicate: true };
+    const el = eventlite(options);
+    const fn = () => {};
+
+    el.on("foo", fn);
+    el.on("foo", fn);
+    assert.strictEqual(el.listenerCount("foo"), 2);
+
+    options.allowDuplicate = false;
+
+    el.on("foo", fn);
+    assert.strictEqual(el.listenerCount("foo"), 3);
+
+    const el2 = eventlite();
+    el2.on("bar", fn);
+    el2.on("bar", fn);
+    assert.strictEqual(el2.listenerCount("bar"), 1);
+  });
 });
