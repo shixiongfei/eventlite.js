@@ -423,6 +423,24 @@ describe("EventLite Unit Test", () => {
     assert.strictEqual(el.listenerCount("sub", sub, context), 1);
   });
 
+  test("falsy context", () => {
+    const el = eventlite();
+    let received;
+
+    function fn() {
+      received = this;
+    }
+
+    el.on("foo", fn, 0);
+    el.emit("foo");
+
+    assert.strictEqual(received, 0);
+    assert.strictEqual(el.listenerCount("foo", fn, 0), 1);
+
+    el.off("foo", fn, 0);
+    assert.strictEqual(el.listenerCount("foo"), 0);
+  });
+
   test("emit", () => {
     /** @type {string[][]} */
     const output = [];
@@ -656,6 +674,26 @@ describe("EventLite Unit Test", () => {
     assert.strictEqual(el.listenerCount("a"), 2);
   });
 
+  test("removeListener on event without listeners", () => {
+    const el = eventlite();
+    const fn = () => {};
+
+    assert.strictEqual(el.removeListener("foo", fn), el);
+    assert.deepStrictEqual(el.eventNames(), []);
+  });
+
+  test("addListener requires a function", () => {
+    const el = eventlite();
+
+    /** @type {any} */
+    const notFunction = null;
+
+    assert.throws(() => el.addListener("foo", notFunction), TypeError);
+    assert.throws(() => el.on("foo", notFunction), TypeError);
+    assert.throws(() => el.once("foo", notFunction), TypeError);
+    assert.deepStrictEqual(el.eventNames(), []);
+  });
+
   test("same fn different context should be treated as different listener", () => {
     const el = eventlite();
 
@@ -734,7 +772,7 @@ describe("EventLite Unit Test", () => {
     assert.deepStrictEqual(el.eventNames(), [event]);
   });
 
-  test("delay function", () => {
+  test("delay function", async () => {
     /** @type {string[]} */
     const output = [];
 
@@ -743,12 +781,9 @@ describe("EventLite Unit Test", () => {
       output.push(text);
     };
 
-    delay(emitted, 100, "100");
-    delay(emitted, 50, "50");
+    await Promise.all([delay(emitted, 100, "100"), delay(emitted, 50, "50")]);
 
-    delay(() => {
-      assert.deepStrictEqual(output, ["50", "100"]);
-    }, 100);
+    assert.deepStrictEqual(output, ["50", "100"]);
   });
 
   test("async send", async () => {
@@ -858,10 +893,11 @@ describe("EventLite Unit Test", () => {
     el.once("baz", asyncEmitted);
     el.on("baz", syncEmitted);
 
-    el.send("baz", "baz1").then((result) => {
-      assert.strictEqual(result, true);
-    });
+    const sent = el.send("baz", "baz1");
+
     el.emit("baz", "baz2");
+
+    assert.strictEqual(await sent, true);
 
     await delay(() => {}, 100);
 
@@ -1007,6 +1043,27 @@ describe("EventLite Unit Test", () => {
     assert.deepStrictEqual(order, ["a", "b"]);
   });
 
+  test("send fan-out continues when a listener rejects", async () => {
+    const el = eventlite();
+    const order = [];
+
+    el.on("foo", () =>
+      delay(() => {
+        order.push("reject");
+        throw new Error("async boom");
+      }, 10),
+    );
+
+    el.on("foo", () => {
+      order.push("sync");
+      return delay(() => order.push("resolve"), 5);
+    });
+
+    await assert.rejects(el.send("foo"), { message: "async boom" });
+
+    assert.deepStrictEqual(order, ["sync", "resolve", "reject"]);
+  });
+
   test("empty string event name", () => {
     const el = eventlite();
     const calls = [];
@@ -1072,6 +1129,63 @@ describe("EventLite Unit Test", () => {
 
     assert.strictEqual(await el.send("foo"), true);
     assert.deepStrictEqual(order, ["a", "b"]);
+  });
+
+  test("send awaits thenable listeners", async () => {
+    const el = eventlite();
+    const order = [];
+
+    /** @param {() => void} callback */
+    const thenable = (callback) => ({
+      /**
+       * @param {() => void} resolve
+       * @param {(error: Error) => void} reject
+       */
+      then(resolve, reject) {
+        setTimeout(() => {
+          try {
+            callback();
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        }, 20);
+      },
+    });
+
+    el.on("foo", () => thenable(() => order.push("thenable")));
+
+    let settled = false;
+
+    const sent = el.send("foo").then((result) => {
+      settled = true;
+      return result;
+    });
+
+    await delay(() => {}, 5);
+    assert.strictEqual(settled, false);
+
+    assert.strictEqual(await sent, true);
+    assert.deepStrictEqual(order, ["thenable"]);
+
+    el.off("foo");
+
+    el.on("bar", () =>
+      thenable(() => {
+        throw new Error("thenable error");
+      }),
+    );
+
+    await assert.rejects(el.send("bar"), { message: "thenable error" });
+
+    el.off("bar");
+    order.length = 0;
+
+    el.on("baz", () => thenable(() => order.push("async")));
+    el.on("baz", () => order.push("sync"));
+
+    assert.strictEqual(await el.send("baz"), true);
+    assert.deepStrictEqual(order, ["sync", "async"]);
   });
 
   test("options snapshot at construction", () => {

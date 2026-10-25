@@ -5,6 +5,14 @@
   "main": "./eventlite.js",
   "types": "./eventlite.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./eventlite.d.ts",
+      "import": "./eventlite.js",
+      "default": "./eventlite.js"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
     "test": "node ./test.js",
     "coverage": "node --test --experimental-test-coverage"

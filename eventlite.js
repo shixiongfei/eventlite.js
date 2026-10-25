@@ -283,8 +283,7 @@ function _isPromise(value) {
   return (
     value !== null &&
     (typeof value === "object" || typeof value === "function") &&
-    typeof value.then === "function" &&
-    typeof value.catch === "function"
+    typeof value.then === "function"
   );
 }
 
@@ -312,7 +311,7 @@ export class EventLite {
    * @returns {this}
    */
   addListener(event, fn, context, once = false) {
-    _newEL(this, event, fn, context || this, once);
+    _newEL(this, event, fn, context == null ? this : context, once);
     return this;
   }
 
@@ -324,7 +323,7 @@ export class EventLite {
    * @returns {this}
    */
   removeListener(event, fn, context) {
-    _delEL(this, event, fn, context || this);
+    _delEL(this, event, fn, context == null ? this : context);
     return this;
   }
 
@@ -504,15 +503,14 @@ export class EventLite {
           }
 
           return _isPromise(retval)
-            ? retval.then(() => resolve(true)).catch((error) => reject(error))
+            ? retval.then(() => resolve(true), reject)
             : resolve(true);
         }
 
-        let args, retval;
+        let args, retval, promises;
         let pcnt = 0;
 
         const length = listeners.length;
-        const promises = new Array(length);
 
         for (let i = 0; i < length; i++) {
           const listener = listeners[i];
@@ -558,6 +556,10 @@ export class EventLite {
           }
 
           if (_isPromise(retval)) {
+            if (!promises) {
+              promises = new Array(length);
+            }
+
             promises[pcnt++] = retval;
           }
         }
@@ -583,7 +585,7 @@ export class EventLite {
    * @returns {() => void} - Remove function
    */
   on(event, fn, context) {
-    const el = _newEL(this, event, fn, context || this, false);
+    const el = _newEL(this, event, fn, context == null ? this : context, false);
 
     return () => {
       if (el && !el.removed) {
@@ -600,7 +602,7 @@ export class EventLite {
    * @returns {() => void} - Remove function
    */
   once(event, fn, context) {
-    const el = _newEL(this, event, fn, context || this, true);
+    const el = _newEL(this, event, fn, context == null ? this : context, true);
 
     return () => {
       if (el && !el.removed) {
@@ -674,7 +676,7 @@ export class EventLite {
       return events.fn ? 1 : events.length;
     }
 
-    context = context || this;
+    context = context == null ? this : context;
 
     if (events.fn) {
       return events.fn === fn && events.context === context ? 1 : 0;
