@@ -374,6 +374,14 @@ export class EventLite {
     const len = arguments.length;
     let args;
 
+    if (len > 6) {
+      args = new Array(len - 1);
+
+      for (let i = 1; i < len; i++) {
+        args[i - 1] = arguments[i];
+      }
+    }
+
     if (listeners.fn) {
       if (listeners.once) {
         _delEL(this, event, undefined, undefined, listeners.id);
@@ -399,17 +407,9 @@ export class EventLite {
           case 6:
             listeners.fn.call(listeners.context, a, b, c, d, e);
             return this;
+          default:
+            listeners.fn.apply(listeners.context, args);
         }
-
-        if (!args) {
-          args = new Array(len - 1);
-
-          for (let i = 1; i < len; i++) {
-            args[i - 1] = arguments[i];
-          }
-        }
-
-        listeners.fn.apply(listeners.context, args);
       } catch (error) {
         if (!this._isolate) {
           throw error;
@@ -460,17 +460,8 @@ export class EventLite {
           case 6:
             listener.fn.call(listener.context, a, b, c, d, e);
             break;
-          default: {
-            if (!args) {
-              args = new Array(len - 1);
-
-              for (let j = 1; j < len; j++) {
-                args[j - 1] = arguments[j];
-              }
-            }
-
+          default:
             listener.fn.apply(listener.context, args);
-          }
         }
       } catch (error) {
         if (!this._isolate) {
@@ -511,6 +502,15 @@ export class EventLite {
         }
 
         const len = _arguments.length;
+        let args;
+
+        if (len > 6) {
+          args = new Array(len - 1);
+
+          for (let j = 1; j < len; j++) {
+            args[j - 1] = _arguments[j];
+          }
+        }
 
         if (listeners.fn) {
           if (listeners.once) {
@@ -539,15 +539,8 @@ export class EventLite {
               case 6:
                 retval = listeners.fn.call(listeners.context, a, b, c, d, e);
                 break;
-              default: {
-                const args = new Array(len - 1);
-
-                for (let i = 1; i < len; i++) {
-                  args[i - 1] = _arguments[i];
-                }
-
+              default:
                 retval = listeners.fn.apply(listeners.context, args);
-              }
             }
           } catch (error) {
             retval = Promise.reject(error);
@@ -558,7 +551,7 @@ export class EventLite {
             : resolve(true);
         }
 
-        let args, retval, promises;
+        let retval, promises;
         let pcnt = 0;
 
         const length = listeners.length;
@@ -590,17 +583,8 @@ export class EventLite {
               case 6:
                 retval = listener.fn.call(listener.context, a, b, c, d, e);
                 break;
-              default: {
-                if (!args) {
-                  args = new Array(len - 1);
-
-                  for (let j = 1; j < len; j++) {
-                    args[j - 1] = _arguments[j];
-                  }
-                }
-
+              default:
                 retval = listener.fn.apply(listener.context, args);
-              }
             }
           } catch (error) {
             retval = Promise.reject(error);
