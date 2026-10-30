@@ -978,6 +978,90 @@ describe("EventLite Unit Test", () => {
     }
   });
 
+  test("isolate swallows listener errors", () => {
+    const el = eventlite({ isolate: true });
+    const order = [];
+
+    el.on("foo", () => {
+      order.push(1);
+      throw new Error("boom");
+    });
+
+    el.on("foo", () => {
+      order.push(2);
+    });
+
+    assert.strictEqual(el.emit("foo"), el);
+    assert.deepStrictEqual(order, [1, 2]);
+
+    const single = eventlite({ isolate: true });
+
+    single.on("bar", () => {
+      throw new Error("boom");
+    });
+
+    assert.strictEqual(single.emit("bar"), single);
+  });
+
+  test("isolate onError receives errors", () => {
+    /** @type {any[]} */
+    const reported = [];
+
+    const isolate = {
+      onError: (error, event, args) => {
+        reported.push([error, event, args]);
+      },
+    };
+
+    const el = eventlite({ isolate });
+
+    el.on("foo", () => {
+      throw "boom";
+    });
+
+    el.on("foo", () => {});
+
+    assert.strictEqual(el.emit("foo", 1), el);
+
+    const single = eventlite({ isolate });
+
+    single.on("bar", () => {
+      throw "single";
+    });
+
+    assert.strictEqual(single.emit("bar", 2), single);
+
+    assert.deepStrictEqual(reported, [
+      ["boom", "foo", [1]],
+      ["single", "bar", [2]],
+    ]);
+  });
+
+  test("emit without isolate rethrows the original value and stops", () => {
+    const el = eventlite();
+    const order = [];
+
+    el.on("foo", () => {
+      throw "boom";
+    });
+
+    el.on("foo", () => {
+      order.push("b");
+    });
+
+    /** @type {any} */
+    let caught;
+
+    try {
+      el.emit("foo");
+    } catch (error) {
+      caught = error;
+    }
+
+    assert.strictEqual(caught, "boom");
+    assert.deepStrictEqual(order, []);
+  });
+
   if (typeof Map === "function") {
     test("FastMap", () => {
       const el1 = eventlite();

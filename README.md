@@ -34,6 +34,7 @@ ESM only (`"type": "module"`). Requires Node.js 18+ or a modern bundler.
 
 - `allowDuplicate` - allow the same listener to be registered more than once.
 - `useFastMap` - use the internal object-based map instead of `Map`. Event names must be strings or symbols; other values are coerced into object keys.
+- `isolate` - isolate synchronous listener errors. Pass `true` to run every listener and swallow their errors, or pass `{ onError }` to receive each error as `(error, event, args)`. Errors thrown by `onError` itself are not caught. Only synchronous throws are isolated; async rejections are reported by `send()`.
 
 ## Document
 

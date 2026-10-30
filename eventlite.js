@@ -298,6 +298,19 @@ export class EventLite {
     /** @type {EventLiteOptions} */
     this._elopts = { ...options };
 
+    const isolate = options.isolate;
+
+    /** @type {boolean} */
+    this._isolate = !!isolate;
+
+    /** @type {((error: any, event: EventName, args: any[]) => void) | undefined} */
+    this._onError =
+      isolate &&
+      typeof isolate === "object" &&
+      typeof isolate.onError === "function"
+        ? isolate.onError
+        : undefined;
+
     /** @type {Map<EventName, EventListener | EventListener[]>} */
     this._elevts = this._elopts.useFastMap ? new _FastMap() : new _ELMap();
   }
@@ -359,45 +372,65 @@ export class EventLite {
     }
 
     const len = arguments.length;
+    let args;
 
     if (listeners.fn) {
       if (listeners.once) {
         _delEL(this, event, undefined, undefined, listeners.id);
       }
 
-      switch (len) {
-        case 1:
-          listeners.fn.call(listeners.context);
-          return this;
-        case 2:
-          listeners.fn.call(listeners.context, a);
-          return this;
-        case 3:
-          listeners.fn.call(listeners.context, a, b);
-          return this;
-        case 4:
-          listeners.fn.call(listeners.context, a, b, c);
-          return this;
-        case 5:
-          listeners.fn.call(listeners.context, a, b, c, d);
-          return this;
-        case 6:
-          listeners.fn.call(listeners.context, a, b, c, d, e);
-          return this;
+      try {
+        switch (len) {
+          case 1:
+            listeners.fn.call(listeners.context);
+            return this;
+          case 2:
+            listeners.fn.call(listeners.context, a);
+            return this;
+          case 3:
+            listeners.fn.call(listeners.context, a, b);
+            return this;
+          case 4:
+            listeners.fn.call(listeners.context, a, b, c);
+            return this;
+          case 5:
+            listeners.fn.call(listeners.context, a, b, c, d);
+            return this;
+          case 6:
+            listeners.fn.call(listeners.context, a, b, c, d, e);
+            return this;
+        }
+
+        if (!args) {
+          args = new Array(len - 1);
+
+          for (let i = 1; i < len; i++) {
+            args[i - 1] = arguments[i];
+          }
+        }
+
+        listeners.fn.apply(listeners.context, args);
+      } catch (error) {
+        if (!this._isolate) {
+          throw error;
+        }
+
+        if (this._onError) {
+          if (!args) {
+            args = new Array(len - 1);
+
+            for (let i = 1; i < len; i++) {
+              args[i - 1] = arguments[i];
+            }
+          }
+
+          this._onError(error, event, args);
+        }
       }
-
-      const args = new Array(len - 1);
-
-      for (let i = 1; i < len; i++) {
-        args[i - 1] = arguments[i];
-      }
-
-      listeners.fn.apply(listeners.context, args);
 
       return this;
     }
 
-    let args;
     const length = listeners.length;
 
     for (let i = 0; i < length; i++) {
@@ -407,26 +440,44 @@ export class EventLite {
         _delEL(this, event, undefined, undefined, listener.id);
       }
 
-      switch (len) {
-        case 1:
-          listener.fn.call(listener.context);
-          break;
-        case 2:
-          listener.fn.call(listener.context, a);
-          break;
-        case 3:
-          listener.fn.call(listener.context, a, b);
-          break;
-        case 4:
-          listener.fn.call(listener.context, a, b, c);
-          break;
-        case 5:
-          listener.fn.call(listener.context, a, b, c, d);
-          break;
-        case 6:
-          listener.fn.call(listener.context, a, b, c, d, e);
-          break;
-        default: {
+      try {
+        switch (len) {
+          case 1:
+            listener.fn.call(listener.context);
+            break;
+          case 2:
+            listener.fn.call(listener.context, a);
+            break;
+          case 3:
+            listener.fn.call(listener.context, a, b);
+            break;
+          case 4:
+            listener.fn.call(listener.context, a, b, c);
+            break;
+          case 5:
+            listener.fn.call(listener.context, a, b, c, d);
+            break;
+          case 6:
+            listener.fn.call(listener.context, a, b, c, d, e);
+            break;
+          default: {
+            if (!args) {
+              args = new Array(len - 1);
+
+              for (let j = 1; j < len; j++) {
+                args[j - 1] = arguments[j];
+              }
+            }
+
+            listener.fn.apply(listener.context, args);
+          }
+        }
+      } catch (error) {
+        if (!this._isolate) {
+          throw error;
+        }
+
+        if (this._onError) {
           if (!args) {
             args = new Array(len - 1);
 
@@ -435,7 +486,7 @@ export class EventLite {
             }
           }
 
-          listener.fn.apply(listener.context, args);
+          this._onError(error, event, args);
         }
       }
     }

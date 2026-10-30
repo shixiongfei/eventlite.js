@@ -12,9 +12,16 @@
 export declare type ListenerFn<T extends any[] = any[]> = (...args: T) => void;
 export declare type EventName = string | symbol;
 
+export declare type EventLiteErrorHandler = (
+  error: any,
+  event: EventName,
+  args: any[],
+) => void;
+
 export declare type EventLiteOptions = {
   allowDuplicate?: boolean;
   useFastMap?: boolean;
+  isolate?: boolean | { onError?: EventLiteErrorHandler };
 };
 
 export declare type EventTypes = EventName | object;
